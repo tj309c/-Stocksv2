@@ -77,9 +77,9 @@ def show_options_dashboard(components, ticker="SPY"):
         show_strategy_tab(data)
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=180)  # Optimized: 3 minutes for options data (updates less frequently)
 def fetch_options_data(_components, ticker):
-    """Fetch options data with caching"""
+    """Fetch options data with caching - Single-layer Streamlit cache"""
     components = _components
     try:
         data = {

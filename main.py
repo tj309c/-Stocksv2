@@ -41,16 +41,25 @@ apply_theme(dark_mode)
 # This ensures consistent theming across light and dark modes
 
 # ========== SESSION STATE INITIALIZATION ==========
-if "dashboard_selected" not in st.session_state:
-    st.session_state.dashboard_selected = False
-if "selected_dashboard" not in st.session_state:
-    st.session_state.selected_dashboard = None
-if "current_ticker" not in st.session_state:
-    st.session_state.current_ticker = "META"
-if "current_options_ticker" not in st.session_state:
-    st.session_state.current_options_ticker = "SPY"
-if "current_crypto" not in st.session_state:
-    st.session_state.current_crypto = "BTC-USD"
+# Unified session state for ticker management across all dashboards
+def init_session_state():
+    """Initialize session state with unified ticker management"""
+    defaults = {
+        "dashboard_selected": False,
+        "selected_dashboard": None,
+        "current_ticker": "META",           # Main stock dashboard
+        "current_options_ticker": "SPY",    # Options dashboard
+        "current_crypto": "BTC-USD",        # Crypto dashboard
+        "advanced_ticker": "SPY",           # Advanced analytics
+        "portfolio_tickers": ["AAPL", "MSFT", "GOOGL"],  # Portfolio
+        "ticker_history": [],               # Track ticker changes
+    }
+    
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+init_session_state()
 
 # ========== INITIALIZE COMPONENTS ==========
 @st.cache_resource

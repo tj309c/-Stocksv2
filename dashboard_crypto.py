@@ -92,9 +92,9 @@ def show_crypto_dashboard(components, ticker="BTC-USD"):
         show_hodl_calculator_tab(data)
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=90)  # Optimized: 90 seconds for crypto (highly volatile)
 def fetch_crypto_data(_components, ticker):
-    """Fetch crypto data with caching"""
+    """Fetch crypto data with caching - Single-layer Streamlit cache"""
     components = _components
     try:
         data = {

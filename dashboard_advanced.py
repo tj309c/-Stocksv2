@@ -77,9 +77,9 @@ def show_advanced_dashboard(components, ticker="SPY"):
         show_sector_comparison_tab(data, components)
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300)  # Optimized: 5 minutes for historical analytics (doesn't need real-time)
 def fetch_advanced_data(_components, ticker):
-    """Fetch data for advanced analytics"""
+    """Fetch data for advanced analytics - Single-layer Streamlit cache"""
     components = _components
     try:
         # Get extended historical data (5 years for backtesting)

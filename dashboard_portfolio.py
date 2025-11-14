@@ -105,9 +105,9 @@ def show_portfolio_dashboard(components):
         show_rebalancing_tab(portfolio_data, investment_amount)
 
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=180)  # Optimized: 3 minutes for portfolio (balance of freshness & performance)
 def fetch_portfolio_data(_components, tickers):
-    """Fetch data for multiple tickers"""
+    """Fetch data for multiple tickers - Single-layer Streamlit cache"""
     components = _components
     try:
         portfolio = {}

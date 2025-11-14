@@ -1,7 +1,8 @@
 """
 Data Fetcher Module - Using yfinance for all market data
 Only scrapes for sentiment/news
-Optimized for speed and reliability
+Optimized for speed and reliability - Direct API calls without SQLite caching
+Caching handled by Streamlit's @st.cache_data decorators in dashboards
 """
 import yfinance as yf
 import pandas as pd
@@ -11,7 +12,6 @@ from typing import Dict, List, Optional, Tuple
 import requests
 from bs4 import BeautifulSoup
 import json
-import sqlite3
 import logging
 from pathlib import Path
 from utils import sanitize_dict_for_cache
@@ -19,63 +19,17 @@ from utils import sanitize_dict_for_cache
 logger = logging.getLogger(__name__)
 
 class MarketDataFetcher:
-    """Fetches all market data using yfinance API"""
+    """Fetches all market data using yfinance API - No internal caching"""
     
-    def __init__(self, cache_dir: Path = Path("data/cache")):
-        self.cache_dir = cache_dir
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.db_path = self.cache_dir / "market_data.db"
-        self._init_db()
-        
-    def _init_db(self):
-        """Initialize SQLite database for caching"""
-        conn = sqlite3.connect(self.db_path)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS cache (
-                key TEXT PRIMARY KEY,
-                data TEXT,
-                timestamp DATETIME
-            )
-        """)
-        conn.commit()
-        conn.close()
-    
-    def _get_cached(self, key: str, max_age_minutes: int = 5) -> Optional[Dict]:
-        """Get cached data if not expired"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT data, timestamp FROM cache WHERE key = ?", (key,)
-        )
-        result = cursor.fetchone()
-        conn.close()
-        
-        if result:
-            data, timestamp = result
-            cached_time = datetime.fromisoformat(timestamp)
-            if datetime.now() - cached_time < timedelta(minutes=max_age_minutes):
-                return json.loads(data)
-        return None
-    
-    def _set_cache(self, key: str, data: Dict):
-        """Store data in cache"""
-        conn = sqlite3.connect(self.db_path)
-        conn.execute(
-            "INSERT OR REPLACE INTO cache (key, data, timestamp) VALUES (?, ?, ?)",
-            (key, json.dumps(data, default=str), datetime.now().isoformat())
-        )
-        conn.commit()
-        conn.close()
+    def __init__(self):
+        """Initialize fetcher without SQLite cache"""
+        # Data directory still useful for future features
+        self.data_dir = Path("data")
+        self.data_dir.mkdir(parents=True, exist_ok=True)
     
     # ========== PRICE DATA ==========
     def get_stock_data(self, ticker: str, period: str = "1y") -> Dict:
-        """Get comprehensive stock data from yfinance"""
-        today = datetime.now().strftime('%Y-%m-%d')
-        cache_key = f"stock_{ticker}_{period}_{today}"
-        cached = self._get_cached(cache_key, max_age_minutes=60)
-        if cached:
-            return cached
-        
+        """Get comprehensive stock data from yfinance - Direct API call"""
         try:
             stock = yf.Ticker(ticker)
             
@@ -91,7 +45,6 @@ class MarketDataFetcher:
             # Sanitize for caching (fix Timestamp issues)
             data = sanitize_dict_for_cache(data)
             
-            self._set_cache(cache_key, data)
             return data
             
         except Exception as e:
@@ -99,12 +52,7 @@ class MarketDataFetcher:
             return {}
     
     def get_realtime_quote(self, ticker: str) -> Dict:
-        """Get real-time quote"""
-        cache_key = f"quote_{ticker}"
-        cached = self._get_cached(cache_key, max_age_minutes=1)
-        if cached:
-            return cached
-        
+        """Get real-time quote - Direct API call"""
         try:
             stock = yf.Ticker(ticker)
             info = stock.info
@@ -125,7 +73,6 @@ class MarketDataFetcher:
                 "timestamp": datetime.now().isoformat()
             }
             
-            self._set_cache(cache_key, quote)
             return quote
             
         except Exception as e:
@@ -134,12 +81,7 @@ class MarketDataFetcher:
     
     # ========== OPTIONS DATA ==========
     def get_options_chain(self, ticker: str) -> Dict:
-        """Get options chain with Greeks"""
-        cache_key = f"options_{ticker}"
-        cached = self._get_cached(cache_key, max_age_minutes=5)
-        if cached:
-            return cached
-        
+        """Get options chain with Greeks - Direct API call"""
         try:
             stock = yf.Ticker(ticker)
             expirations = stock.options[:6]  # Get first 6 expirations
@@ -156,7 +98,6 @@ class MarketDataFetcher:
                     "puts": chain.puts.to_dict() if not chain.puts.empty else {}
                 }
             
-            self._set_cache(cache_key, options_data)
             return options_data
             
         except Exception as e:
@@ -165,12 +106,7 @@ class MarketDataFetcher:
     
     # ========== FUNDAMENTALS ==========
     def get_fundamentals(self, ticker: str) -> Dict:
-        """Get fundamental data"""
-        cache_key = f"fundamentals_{ticker}"
-        cached = self._get_cached(cache_key, max_age_minutes=60)
-        if cached:
-            return cached
-        
+        """Get fundamental data - Direct API call"""
         try:
             stock = yf.Ticker(ticker)
             
@@ -182,7 +118,6 @@ class MarketDataFetcher:
                 "recommendations": stock.recommendations.to_dict() if hasattr(stock, 'recommendations') and stock.recommendations is not None else {},
             }
             
-            self._set_cache(cache_key, fundamentals)
             return fundamentals
             
         except Exception as e:
@@ -191,12 +126,7 @@ class MarketDataFetcher:
     
     # ========== INSTITUTIONAL ==========
     def get_institutional_data(self, ticker: str) -> Dict:
-        """Get institutional and insider data"""
-        cache_key = f"institutional_{ticker}"
-        cached = self._get_cached(cache_key, max_age_minutes=1440)  # Cache for 24 hours
-        if cached:
-            return cached
-        
+        """Get institutional and insider data - Direct API call"""
         try:
             stock = yf.Ticker(ticker)
             
@@ -207,7 +137,6 @@ class MarketDataFetcher:
                 "insider_purchases": stock.insider_purchases.to_dict() if hasattr(stock, 'insider_purchases') and stock.insider_purchases is not None else {},
             }
             
-            self._set_cache(cache_key, data)
             return data
             
         except Exception as e:

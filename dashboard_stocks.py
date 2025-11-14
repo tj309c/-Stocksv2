@@ -102,9 +102,9 @@ def show_stocks_dashboard(components, ticker="META"):
         show_institutional_tab(data)
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=120)  # Optimized: 2 minutes for real-time stock data
 def fetch_stock_data(_components, ticker):
-    """Fetch all stock data with caching"""
+    """Fetch all stock data with caching - Single-layer Streamlit cache"""
     components = _components
     try:
         data = {

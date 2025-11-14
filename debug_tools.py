@@ -383,6 +383,19 @@ def show_debug_panel():
         if st.sidebar.button("🔍 Run Full Diagnostics"):
             st.session_state.show_diagnostics = True
     
+    # Cache management
+    st.sidebar.markdown("### 🧹 Cache Management")
+    col1, col2 = st.sidebar.columns(2)
+    with col1:
+        if st.button("🗑️ Clear Cache", help="Clear all Streamlit caches"):
+            st.cache_data.clear()
+            st.cache_resource.clear()
+            st.success("✅ Cache cleared!")
+            st.rerun()
+    with col2:
+        if st.button("🔄 Reload", help="Reload current page"):
+            st.rerun()
+    
     # Full diagnostics
     if st.session_state.get('show_diagnostics', False):
         debug = DebugTools()
