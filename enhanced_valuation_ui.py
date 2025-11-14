@@ -45,18 +45,28 @@ def show_enhanced_valuation_tab(data, components):
         st.error("❌ Cannot calculate valuation: No shares outstanding data")
         return
     
-    # Get base cash flow
-    base_cash_flow = get_base_cash_flow(financials, info)
-    
-    if base_cash_flow == 0:
-        st.warning("⚠️ No cash flow data available. Using estimated cash flow based on earnings.")
-        # Estimate from net income
-        net_income = info.get("netIncomeToCommon", 0)
-        if net_income > 0:
-            base_cash_flow = net_income * 0.8  # Rough estimate
-        else:
-            st.error("❌ Cannot estimate cash flow. Please try another ticker.")
-            return
+    # Get base cash flow with robust error handling
+    try:
+        base_cash_flow = get_base_cash_flow(financials, info)
+        
+        if base_cash_flow == 0:
+            st.warning("⚠️ No cash flow data available. Using estimated cash flow based on earnings.")
+            # Estimate from net income
+            net_income = info.get("netIncomeToCommon", 0)
+            if net_income > 0:
+                base_cash_flow = net_income * 0.8  # Rough estimate
+                st.info(f"ℹ️ Using estimated FCF: {format_currency(base_cash_flow)} (80% of Net Income)")
+            else:
+                st.error("❌ Cannot estimate cash flow. Please try another ticker with available financial data.")
+                st.markdown("**Troubleshooting:**")
+                st.markdown("- Try a different ticker symbol")
+                st.markdown("- Check if the company has recent financial statements")
+                st.markdown("- Some companies may have limited data available via API")
+                return
+    except Exception as e:
+        logger.error(f"Error getting base cash flow: {e}")
+        st.error(f"❌ Error fetching cash flow data: {str(e)}")
+        return
     
     # Create tabs for different valuation tools
     val_tab1, val_tab2, val_tab3, val_tab4 = st.tabs([
@@ -77,6 +87,23 @@ def show_enhanced_valuation_tab(data, components):
     
     with val_tab4:
         show_scenario_comparison(calc, base_cash_flow, current_price, cash, debt, shares_outstanding)
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _calculate_dcf_cached(base_cash_flow, growth_rate, wacc, terminal_growth, projection_years, cash, debt, shares_outstanding):
+    """Cached DCF calculation to avoid recomputation"""
+    from enhanced_valuation import get_enhanced_dcf_calculator
+    calc = get_enhanced_dcf_calculator()
+    return calc.calculate_dcf_detailed(
+        base_cash_flow=base_cash_flow,
+        growth_rate=growth_rate,
+        wacc=wacc,
+        terminal_growth=terminal_growth,
+        projection_years=int(projection_years),
+        cash=cash,
+        debt=debt,
+        shares_outstanding=shares_outstanding
+    )
 
 
 def show_interactive_dcf(calc, base_cash_flow, current_price, cash, debt, shares_outstanding, info):
@@ -145,8 +172,8 @@ def show_interactive_dcf(calc, base_cash_flow, current_price, cash, debt, shares
         st.markdown(f"**Shares Outstanding:** {format_large_number(shares_outstanding)}")
         st.markdown(f"**Current Price:** {format_currency(current_price)}")
     
-    # Calculate DCF with current parameters
-    result = calc.calculate_dcf_detailed(
+    # Calculate DCF with current parameters (using cached function)
+    result = _calculate_dcf_cached(
         base_cash_flow=base_cash_flow,
         growth_rate=growth_rate,
         wacc=wacc,
@@ -211,7 +238,7 @@ def show_interactive_dcf(calc, base_cash_flow, current_price, cash, debt, shares
             })
         
         cf_df = pd.DataFrame(cf_data)
-        st.dataframe(cf_df, use_container_width=True)
+        st.dataframe(cf_df, width='stretch')
         
         st.markdown("#### Terminal Value Calculation")
         col1, col2 = st.columns(2)
@@ -266,7 +293,30 @@ def show_interactive_dcf(calc, base_cash_flow, current_price, cash, debt, shares
         barmode='group'
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def _run_monte_carlo_cached(base_cash_flow, growth_mean, growth_std, wacc_mean, wacc_std, 
+                            terminal_mean, terminal_std, projection_years, cash, debt, 
+                            shares_outstanding, num_simulations):
+    """Cached Monte Carlo simulation to avoid expensive recomputation"""
+    from enhanced_valuation import get_enhanced_dcf_calculator
+    calc = get_enhanced_dcf_calculator()
+    return calc.monte_carlo_dcf(
+        base_cash_flow=base_cash_flow,
+        growth_rate_mean=growth_mean,
+        growth_rate_std=growth_std,
+        wacc_mean=wacc_mean,
+        wacc_std=wacc_std,
+        terminal_growth_mean=terminal_mean,
+        terminal_growth_std=terminal_std,
+        projection_years=int(projection_years),
+        cash=cash,
+        debt=debt,
+        shares_outstanding=shares_outstanding,
+        num_simulations=int(num_simulations)
+    )
 
 
 def show_monte_carlo_simulation(calc, base_cash_flow, current_price, cash, debt, shares_outstanding):
@@ -300,14 +350,14 @@ def show_monte_carlo_simulation(calc, base_cash_flow, current_price, cash, debt,
     
     if st.button("🚀 Run Monte Carlo Simulation", type="primary", key="run_mc"):
         with st.spinner(f"Running {num_simulations} simulations..."):
-            mc_result = calc.monte_carlo_dcf(
+            mc_result = _run_monte_carlo_cached(
                 base_cash_flow=base_cash_flow,
-                growth_rate_mean=growth_mean,
-                growth_rate_std=growth_std,
+                growth_mean=growth_mean,
+                growth_std=growth_std,
                 wacc_mean=wacc_mean,
                 wacc_std=wacc_std,
-                terminal_growth_mean=terminal_mean,
-                terminal_growth_std=terminal_std,
+                terminal_mean=terminal_mean,
+                terminal_std=terminal_std,
                 projection_years=int(projection_years),
                 cash=cash,
                 debt=debt,
@@ -349,7 +399,7 @@ def show_monte_carlo_simulation(calc, base_cash_flow, current_price, cash, debt,
             })
         
         ci_df = pd.DataFrame(ci_data)
-        st.dataframe(ci_df, use_container_width=True)
+        st.dataframe(ci_df, width='stretch')
         
         # Distribution chart
         st.markdown("### 📊 Fair Value Distribution")
@@ -389,7 +439,7 @@ def show_monte_carlo_simulation(calc, base_cash_flow, current_price, cash, debt,
             showlegend=True
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         
         # Percentiles
         st.markdown("### 📉 Percentile Breakdown")
@@ -403,7 +453,7 @@ def show_monte_carlo_simulation(calc, base_cash_flow, current_price, cash, debt,
             })
         
         perc_df = pd.DataFrame(percentile_data)
-        st.dataframe(perc_df, use_container_width=True)
+        st.dataframe(perc_df, width='stretch')
 
 
 def show_sensitivity_analysis(calc, base_cash_flow, current_price, cash, debt, shares_outstanding):
@@ -492,7 +542,7 @@ def show_sensitivity_analysis(calc, base_cash_flow, current_price, cash, debt, s
             hovermode='x unified'
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         
         # Data table
         st.markdown("### 📋 Detailed Results")
@@ -501,7 +551,7 @@ def show_sensitivity_analysis(calc, base_cash_flow, current_price, cash, debt, s
             'Fair Value': [format_currency(fv) for fv in fair_values],
             'vs Current': [f"{((fv - current_price) / current_price * 100):+.1f}%" for fv in fair_values]
         })
-        st.dataframe(sens_df, use_container_width=True)
+        st.dataframe(sens_df, width='stretch')
     
     # Two-way sensitivity
     st.markdown("---")
@@ -545,7 +595,7 @@ def show_sensitivity_analysis(calc, base_cash_flow, current_price, cash, debt, s
                 height=600
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
 
 def show_scenario_comparison(calc, base_cash_flow, current_price, cash, debt, shares_outstanding):
@@ -712,7 +762,7 @@ def show_scenario_comparison(calc, base_cash_flow, current_price, cash, debt, sh
     fig.update_yaxes(title_text="Price ($)", row=1, col=1)
     fig.update_yaxes(title_text="Value ($)", row=1, col=2)
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     
     # Detailed comparison table
     with st.expander("📋 Detailed Scenario Comparison", expanded=False):
@@ -730,11 +780,20 @@ def show_scenario_comparison(calc, base_cash_flow, current_price, cash, debt, sh
             })
         
         comp_df = pd.DataFrame(comparison_data)
-        st.dataframe(comp_df, use_container_width=True)
+        st.dataframe(comp_df, width='stretch')
 
 
 def get_base_cash_flow(financials: dict, info: dict) -> float:
-    """Extract base cash flow from financial data"""
+    """
+    Extract base cash flow from financial data
+    
+    Args:
+        financials: Dictionary containing financial statements
+        info: Dictionary containing stock info
+        
+    Returns:
+        float: Base free cash flow (positive value), or 0 if not available
+    """
     try:
         # Try to get free cash flow from financials
         if "cash_flow" in financials and financials.get("cash_flow"):

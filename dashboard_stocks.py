@@ -18,6 +18,7 @@ from wsb_quotes import (get_confidence_message, get_sentiment_comment,
 from utils import (format_currency, format_percentage, format_large_number,
                    format_price, get_color_for_value, get_confidence_color,
                    safe_get, safe_divide, sanitize_dict_for_cache)
+from enhanced_valuation_ui import show_enhanced_valuation_tab
 
 def show_stocks_dashboard(components, ticker="META"):
     """Display the stocks analysis dashboard"""
@@ -95,7 +96,6 @@ def show_stocks_dashboard(components, ticker="META"):
     
     with tab3:
         # Enhanced valuation with interactive DCF and Monte Carlo
-        from enhanced_valuation_ui import show_enhanced_valuation_tab
         show_enhanced_valuation_tab(data, components)
     
     with tab4:

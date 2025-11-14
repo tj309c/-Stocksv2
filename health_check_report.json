@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-14T07:55:06.859398",
+  "timestamp": "2025-11-14T13:04:58.588275",
   "syntax_checks": [],
   "import_checks": [
     {
@@ -39,38 +39,38 @@
     },
     {
       "test": "ccxt (Crypto exchange data) [OPTIONAL]",
-      "status": "WARN",
-      "details": "No module named 'ccxt'"
+      "status": "PASS",
+      "details": ""
     },
     {
       "test": "fredapi (Federal Reserve data) [OPTIONAL]",
-      "status": "WARN",
-      "details": "No module named 'fredapi'"
+      "status": "PASS",
+      "details": ""
     },
     {
       "test": "anthropic (Claude LLM) [OPTIONAL]",
-      "status": "WARN",
-      "details": "No module named 'anthropic'"
+      "status": "PASS",
+      "details": ""
     },
     {
       "test": "finnhub (Insider trades) [OPTIONAL]",
-      "status": "WARN",
-      "details": "No module named 'finnhub'"
+      "status": "PASS",
+      "details": ""
     },
     {
       "test": "praw (Reddit API) [OPTIONAL]",
-      "status": "WARN",
-      "details": "No module named 'praw'"
+      "status": "PASS",
+      "details": ""
     },
     {
       "test": "newsapi (News API) [OPTIONAL]",
-      "status": "WARN",
-      "details": "No module named 'newsapi'"
+      "status": "PASS",
+      "details": ""
     },
     {
       "test": "statsmodels (Statistical models) [OPTIONAL]",
-      "status": "WARN",
-      "details": "No module named 'statsmodels'"
+      "status": "PASS",
+      "details": ""
     }
   ],
   "module_tests": [
@@ -274,7 +274,7 @@
     {
       "test": "Monte Carlo simulation",
       "status": "PASS",
-      "details": "100 simulations, mean: $197.34"
+      "details": "100 simulations, mean: $203.36"
     },
     {
       "test": "Sensitivity analysis",
@@ -310,22 +310,14 @@
     }
   ],
   "errors": [],
-  "warnings": [
-    "Optional: ccxt not available - No module named 'ccxt'",
-    "Optional: fredapi not available - No module named 'fredapi'",
-    "Optional: anthropic not available - No module named 'anthropic'",
-    "Optional: finnhub not available - No module named 'finnhub'",
-    "Optional: praw not available - No module named 'praw'",
-    "Optional: newsapi not available - No module named 'newsapi'",
-    "Optional: statsmodels not available - No module named 'statsmodels'"
-  ],
+  "warnings": [],
   "summary": {
     "total_tests": 60,
-    "passed": 50,
+    "passed": 57,
     "failed": 0,
-    "warnings": 10,
-    "pass_rate": "83.3%",
+    "warnings": 3,
+    "pass_rate": "95.0%",
     "critical_errors": 0,
-    "total_warnings": 7
+    "total_warnings": 0
   }
 }
