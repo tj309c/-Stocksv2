@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 import requests
 from bs4 import BeautifulSoup
-import json
 import logging
 from pathlib import Path
 from utils import sanitize_dict_for_cache
@@ -24,46 +23,6 @@ class MarketDataFetcher:
     def __init__(self, cache_dir: Path = Path("data/cache")):
         self.cache_dir = cache_dir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        
-    def _init_db(self):
-        """Initialize SQLite database for caching"""
-        conn = sqlite3.connect(self.db_path)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS cache (
-                key TEXT PRIMARY KEY,
-                data TEXT,
-                timestamp DATETIME
-            )
-        """)
-        conn.commit()
-        conn.close()
-    
-    def _get_cached(self, key: str, max_age_minutes: int = 5) -> Optional[Dict]:
-        """Get cached data if not expired"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT data, timestamp FROM cache WHERE key = ?", (key,)
-        )
-        result = cursor.fetchone()
-        conn.close()
-        
-        if result:
-            data, timestamp = result
-            cached_time = datetime.fromisoformat(timestamp)
-            if datetime.now() - cached_time < timedelta(minutes=max_age_minutes):
-                return json.loads(data)
-        return None
-    
-    def _set_cache(self, key: str, data: Dict):
-        """Store data in cache"""
-        conn = sqlite3.connect(self.db_path)
-        conn.execute(
-            "INSERT OR REPLACE INTO cache (key, data, timestamp) VALUES (?, ?, ?)",
-            (key, json.dumps(data, default=str), datetime.now().isoformat())
-        )
-        conn.commit()
-        conn.close()
     
     # ========== PRICE DATA ==========
     @st.cache_data(ttl=300)  # 5 minutes
