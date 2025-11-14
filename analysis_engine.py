@@ -152,6 +152,79 @@ class ValuationEngine:
         except Exception as e:
             logger.error(f"Error in multiples valuation: {e}")
             return {"error": str(e)}
+    
+    def calculate_ddm(self, info: Dict) -> Dict:
+        """Calculate Dividend Discount Model valuation"""
+        try:
+            dividend = info.get("dividendYield", 0)
+            if dividend == 0:
+                return {"error": "No dividend data available"}
+            
+            # Convert yield to annual dividend amount
+            current_price = info.get("currentPrice", info.get("regularMarketPrice", 0))
+            annual_dividend = current_price * dividend
+            
+            # Estimate dividend growth rate from payout ratio and earnings growth
+            payout_ratio = info.get("payoutRatio", 0.4)
+            earnings_growth = info.get("earningsGrowth", 0.05)
+            dividend_growth = earnings_growth * (1 - payout_ratio)
+            
+            # Gordon Growth Model: Price = D1 / (r - g)
+            # where D1 = next year's dividend, r = required return, g = growth rate
+            required_return = self.risk_free_rate + info.get("beta", 1.0) * self.market_risk_premium
+            
+            if required_return <= dividend_growth:
+                return {"error": "Growth rate exceeds required return"}
+            
+            fair_value = annual_dividend * (1 + dividend_growth) / (required_return - dividend_growth)
+            
+            return {
+                "fair_value": fair_value,
+                "current_price": current_price,
+                "upside": ((fair_value - current_price) / current_price * 100) if current_price > 0 else 0,
+                "dividend_yield": dividend * 100,
+                "dividend_growth": dividend_growth * 100,
+                "method": "DDM"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in DDM calculation: {e}")
+            return {"error": str(e)}
+    
+    def calculate_nav(self, info: Dict, financials: Dict) -> Dict:
+        """Calculate Net Asset Value"""
+        try:
+            # Get balance sheet data
+            total_assets = info.get("totalAssets", 0)
+            total_liabilities = info.get("totalLiabilities", 0)
+            shares_outstanding = info.get("sharesOutstanding", 0)
+            
+            if shares_outstanding == 0:
+                return {"error": "No shares outstanding data"}
+            
+            # Calculate book value
+            book_value = total_assets - total_liabilities
+            nav_per_share = book_value / shares_outstanding
+            
+            # Tangible book value (exclude intangibles)
+            intangible_assets = info.get("intangibleAssets", 0)
+            tangible_book_value = book_value - intangible_assets
+            tangible_nav = tangible_book_value / shares_outstanding
+            
+            current_price = info.get("currentPrice", info.get("regularMarketPrice", 0))
+            
+            return {
+                "fair_value": nav_per_share,
+                "tangible_nav": tangible_nav,
+                "current_price": current_price,
+                "upside": ((nav_per_share - current_price) / current_price * 100) if current_price > 0 else 0,
+                "price_to_book": current_price / nav_per_share if nav_per_share > 0 else 0,
+                "method": "NAV"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in NAV calculation: {e}")
+            return {"error": str(e)}
 
 
 class TechnicalAnalyzer:
@@ -229,6 +302,25 @@ class TechnicalAnalyzer:
                 "average": avg_volume,
                 "ratio": latest_volume / avg_volume if avg_volume > 0 else 1,
                 "increasing": latest_volume > avg_volume * 1.5
+            }
+            
+            # ADX (Average Directional Index) - Trend strength
+            adx = ta.trend.ADXIndicator(df['High'], df['Low'], df['Close'])
+            analysis["adx"] = {
+                "value": adx.adx().iloc[-1] if len(df) >= 14 else 0,
+                "plus_di": adx.adx_pos().iloc[-1] if len(df) >= 14 else 0,
+                "minus_di": adx.adx_neg().iloc[-1] if len(df) >= 14 else 0,
+                "signal": "strong_trend" if adx.adx().iloc[-1] > 25 else "weak_trend" if len(df) >= 14 else "insufficient_data"
+            }
+            
+            # OBV (On-Balance Volume) - Volume momentum
+            obv = ta.volume.OnBalanceVolumeIndicator(df['Close'], df['Volume'])
+            obv_values = obv.on_balance_volume()
+            obv_ma = obv_values.rolling(20).mean()
+            analysis["obv"] = {
+                "value": obv_values.iloc[-1],
+                "ma_20": obv_ma.iloc[-1] if len(df) >= 20 else obv_values.iloc[-1],
+                "bullish": obv_values.iloc[-1] > obv_ma.iloc[-1] if len(df) >= 20 else False
             }
             
             # Trend
@@ -490,6 +582,101 @@ class GoodBuyAnalyzer:
             "signals": signals,
             "recommendation": "STRONG BUY" if total_score >= 70 else "BUY" if total_score >= 50 else "HOLD"
         }
+
+
+class RiskAnalyzer:
+    """Risk analysis and metrics"""
+    
+    def calculate_risk_metrics(self, df: pd.DataFrame, info: Dict) -> Dict:
+        """Calculate comprehensive risk metrics"""
+        if df.empty or len(df) < 30:
+            return {"error": "Insufficient data for risk analysis"}
+        
+        try:
+            # Calculate returns
+            returns = df['Close'].pct_change().dropna()
+            
+            # Beta (already in info, but calculate for confirmation)
+            beta = info.get("beta", 1.0)
+            
+            # Sharpe Ratio (annualized)
+            risk_free_rate = 0.045  # 4.5% annual
+            excess_returns = returns.mean() - (risk_free_rate / 252)  # Daily risk-free rate
+            sharpe_ratio = (excess_returns / returns.std()) * np.sqrt(252) if returns.std() > 0 else 0
+            
+            # Sortino Ratio (only downside volatility)
+            downside_returns = returns[returns < 0]
+            downside_std = downside_returns.std() if len(downside_returns) > 0 else returns.std()
+            sortino_ratio = (excess_returns / downside_std) * np.sqrt(252) if downside_std > 0 else 0
+            
+            # Rolling volatility (30-day window)
+            rolling_vol = returns.rolling(window=30).std() * np.sqrt(252) * 100  # Annualized %
+            current_vol = rolling_vol.iloc[-1] if len(rolling_vol) > 0 else 0
+            avg_vol = rolling_vol.mean() if len(rolling_vol) > 0 else 0
+            
+            # Maximum Drawdown
+            cumulative = (1 + returns).cumprod()
+            running_max = cumulative.expanding().max()
+            drawdown = (cumulative - running_max) / running_max
+            max_drawdown = drawdown.min() * 100  # Convert to percentage
+            
+            # Value at Risk (VaR) - 95% confidence
+            var_95 = np.percentile(returns, 5) * 100  # 5th percentile
+            
+            # Expected Shortfall (CVaR) - average of worst 5%
+            cvar_95 = returns[returns <= np.percentile(returns, 5)].mean() * 100
+            
+            return {
+                "beta": beta,
+                "sharpe_ratio": sharpe_ratio,
+                "sortino_ratio": sortino_ratio,
+                "current_volatility": current_vol,
+                "average_volatility": avg_vol,
+                "max_drawdown": max_drawdown,
+                "var_95": var_95,
+                "cvar_95": cvar_95,
+                "rolling_volatility": rolling_vol.tolist()[-60:] if len(rolling_vol) >= 60 else rolling_vol.tolist(),  # Last 60 days
+                "risk_rating": self._get_risk_rating(current_vol, beta, max_drawdown)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating risk metrics: {e}")
+            return {"error": str(e)}
+    
+    def _get_risk_rating(self, volatility: float, beta: float, max_drawdown: float) -> str:
+        """Determine overall risk rating"""
+        risk_score = 0
+        
+        # Volatility contribution
+        if volatility > 50:
+            risk_score += 3
+        elif volatility > 30:
+            risk_score += 2
+        elif volatility > 15:
+            risk_score += 1
+        
+        # Beta contribution
+        if abs(beta) > 1.5:
+            risk_score += 2
+        elif abs(beta) > 1.0:
+            risk_score += 1
+        
+        # Drawdown contribution
+        if abs(max_drawdown) > 50:
+            risk_score += 3
+        elif abs(max_drawdown) > 30:
+            risk_score += 2
+        elif abs(max_drawdown) > 15:
+            risk_score += 1
+        
+        if risk_score >= 6:
+            return "Very High Risk"
+        elif risk_score >= 4:
+            return "High Risk"
+        elif risk_score >= 2:
+            return "Moderate Risk"
+        else:
+            return "Low Risk"
 
 
 class OptionsAnalyzer:

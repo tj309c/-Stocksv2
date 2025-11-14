@@ -16,6 +16,8 @@ from dashboard_selector import show_selector, show_dashboard_switcher
 from dashboard_stocks import show_stocks_dashboard
 from dashboard_options import show_options_dashboard
 from dashboard_crypto import show_crypto_dashboard
+from dashboard_advanced import show_advanced_dashboard
+from dashboard_portfolio import show_portfolio_dashboard
 
 # Import utilities
 from theme_manager import apply_theme, show_theme_toggle
@@ -89,7 +91,13 @@ else:
     elif selected == "options":
         show_options_dashboard(components, st.session_state.current_options_ticker)
     elif selected == "crypto":
-        show_crypto_dashboard(components, st.session_state.current_crypto)
+        show_crypto_dashboard(components, ticker=st.session_state.get("current_crypto", "BTC-USD"))
+    
+    elif selected == "advanced":
+        show_advanced_dashboard(components, ticker=st.session_state.get("advanced_ticker", "SPY"))
+    
+    elif selected == "portfolio":
+        show_portfolio_dashboard(components)
     else:
         # Fallback
         st.error("Unknown dashboard selected. Returning to menu...")

@@ -93,6 +93,22 @@ def show_selector():
             background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(28, 31, 38, 0.8));
         }
         
+        .advanced-card {
+            border-color: #a78bfa;
+        }
+        
+        .advanced-card:hover {
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(28, 31, 38, 0.8));
+        }
+        
+        .portfolio-card {
+            border-color: #fb923c;
+        }
+        
+        .portfolio-card:hover {
+            background: linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(28, 31, 38, 0.8));
+        }
+        
         .card-icon {
             font-size: 5em;
             margin-bottom: 20px;
@@ -144,7 +160,7 @@ def show_selector():
     st.markdown('<p class="subtitle">Choose Your Path to Tendies (or Wendy\'s)... 💰</p>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle" style="font-size: 1em; color: #666;">*Not financial advice. We\'re all regarded here.*</p>', unsafe_allow_html=True)
     
-    # Dashboard selection cards
+    # Dashboard selection cards - Row 1
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -155,16 +171,16 @@ def show_selector():
             <div class="card-subtitle">💎🙌 Diamond Hands Only 🦍</div>
             <div class="card-features">
                 ✅ Real-time copium tracking<br>
-                ✅ "DD" (crayon analysis)<br>
-                ✅ Bag holder valuation<br>
+                ✅ DCF, DDM, NAV models<br>
+                ✅ ADX & OBV indicators<br>
                 ✅ Ape sentiment heatmap<br>
-                ✅ Lambo price calculator<br>
+                ✅ Risk metrics (Sharpe/Sortino)<br>
                 🚨 Includes loss porn generator
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("🦍 **STONKS ONLY GO UP!**", key="stocks", width='stretch', type="primary"):
+        if st.button("🦍 **STONKS ONLY GO UP!**", key="stocks", use_container_width=True, type="primary"):
             st.session_state.selected_dashboard = "stocks"
             st.session_state.dashboard_selected = True
             show_rocket_animation()
@@ -187,7 +203,7 @@ def show_selector():
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("⚡ **YOLO THE RENT MONEY!**", key="options", width='stretch', type="primary"):
+        if st.button("⚡ **YOLO THE RENT MONEY!**", key="options", use_container_width=True, type="primary"):
             st.session_state.selected_dashboard = "options"
             st.session_state.dashboard_selected = True
             show_rocket_animation()
@@ -210,11 +226,74 @@ def show_selector():
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("🌙 **WEN LAMBO?! (spoiler: never)**", key="crypto", width='stretch', type="primary"):
+        if st.button("🌙 **WEN LAMBO?! (spoiler: never)**", key="crypto", use_container_width=True, type="primary"):
             st.session_state.selected_dashboard = "crypto"
             st.session_state.dashboard_selected = True
             show_rocket_animation()
             st.rerun()
+    
+    # Row 2 - New dashboards
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    
+    with col1:
+        st.markdown("""
+        <div class="dashboard-card advanced-card">
+            <div class="card-icon">🔬</div>
+            <div class="card-title" style="color: #a78bfa;">ADVANCED</div>
+            <div class="card-subtitle">📊 For Quants & Data Nerds 🤓</div>
+            <div class="card-features">
+                ✅ Model backtesting (DCF, P/E)<br>
+                ✅ Prophet forecasting<br>
+                ✅ Short squeeze detector<br>
+                ✅ Sector relative valuation<br>
+                ✅ MAPE accuracy metrics<br>
+                🚨 Math heavy, autism optional
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("🔬 **UNLEASH THE QUANT!**", key="advanced", use_container_width=True, type="primary"):
+            st.session_state.selected_dashboard = "advanced"
+            st.session_state.dashboard_selected = True
+            show_rocket_animation()
+            st.rerun()
+    
+    with col2:
+        st.markdown("""
+        <div class="dashboard-card portfolio-card">
+            <div class="card-icon">💼</div>
+            <div class="card-title" style="color: #fb923c;">PORTFOLIO</div>
+            <div class="card-subtitle">📈 Diversify Like a Pro 🎯</div>
+            <div class="card-features">
+                ✅ Efficient frontier analysis<br>
+                ✅ Modern Portfolio Theory<br>
+                ✅ Risk-return optimization<br>
+                ✅ Auto-rebalancing suggestions<br>
+                ✅ Correlation matrix<br>
+                🚨 "Diversification is for poors"
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("💼 **OPTIMIZE MY TENDIES!**", key="portfolio", use_container_width=True, type="primary"):
+            st.session_state.selected_dashboard = "portfolio"
+            st.session_state.dashboard_selected = True
+            show_rocket_animation()
+            st.rerun()
+    
+    with col3:
+        st.markdown("""
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 40px;">
+            <div style="text-align: center;">
+                <div style="font-size: 3em; margin-bottom: 20px;">🎲</div>
+                <div style="font-size: 1.5em; color: #666; font-style: italic;">
+                    More dashboards<br>coming soon...<br><br>
+                    <span style="font-size: 0.8em;">Or not. We're lazy.</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     # Fun footer
     st.markdown("""
@@ -271,34 +350,51 @@ def show_dashboard_switcher():
     dashboard_emojis = {
         "stocks": "📈 STONKS",
         "options": "⚡ OPTIONS",
-        "crypto": "🚀 CRYPTO"
+        "crypto": "🚀 CRYPTO",
+        "advanced": "🔬 ADVANCED",
+        "portfolio": "💼 PORTFOLIO"
     }
     
     st.sidebar.info(f"**Current:** {dashboard_emojis.get(current, 'Unknown')}")
     
-    # Switch buttons
+    # Switch buttons - Row 1
     col1, col2, col3 = st.sidebar.columns(3)
     
     with col1:
-        if st.button("📈", key="switch_stocks", help="Stocks Dashboard", width='stretch'):
+        if st.button("📈", key="switch_stocks", help="Stocks Dashboard", use_container_width=True):
             if current != "stocks":
                 st.session_state.selected_dashboard = "stocks"
                 st.rerun()
     
     with col2:
-        if st.button("⚡", key="switch_options", help="Options Dashboard", width='stretch'):
+        if st.button("⚡", key="switch_options", help="Options Dashboard", use_container_width=True):
             if current != "options":
                 st.session_state.selected_dashboard = "options"
                 st.rerun()
     
     with col3:
-        if st.button("🚀", key="switch_crypto", help="Crypto Dashboard", width='stretch'):
+        if st.button("🚀", key="switch_crypto", help="Crypto Dashboard", use_container_width=True):
             if current != "crypto":
                 st.session_state.selected_dashboard = "crypto"
                 st.rerun()
     
+    # Switch buttons - Row 2
+    col1, col2, col3 = st.sidebar.columns([1, 1, 1])
+    
+    with col1:
+        if st.button("🔬", key="switch_advanced", help="Advanced Analytics", use_container_width=True):
+            if current != "advanced":
+                st.session_state.selected_dashboard = "advanced"
+                st.rerun()
+    
+    with col2:
+        if st.button("💼", key="switch_portfolio", help="Portfolio Manager", use_container_width=True):
+            if current != "portfolio":
+                st.session_state.selected_dashboard = "portfolio"
+                st.rerun()
+    
     # Reset button
-    if st.sidebar.button("🏠 Back to Menu", width='stretch'):
+    if st.sidebar.button("🏠 Back to Menu", use_container_width=True):
         st.session_state.dashboard_selected = False
         st.session_state.selected_dashboard = None
         st.rerun()

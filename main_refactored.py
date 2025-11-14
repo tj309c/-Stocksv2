@@ -45,6 +45,8 @@ from dashboard_selector import show_selector, show_dashboard_switcher
 from dashboard_stocks import show_stocks_dashboard
 from dashboard_options import show_options_dashboard
 from dashboard_crypto import show_crypto_dashboard
+from dashboard_advanced import show_advanced_dashboard
+from dashboard_portfolio import show_portfolio_dashboard
 from debug_tools import show_debug_panel
 
 # Import analysis engines
@@ -157,7 +159,11 @@ def main():
         elif current_page == "options":
             show_options_dashboard(components)
         elif current_page == "crypto":
-            show_crypto_dashboard(components)
+            show_crypto_dashboard(components, ticker=st.session_state.get("current_crypto", "BTC-USD"))
+        elif current_page == "advanced":
+            show_advanced_dashboard(components, ticker=st.session_state.get("advanced_ticker", "SPY"))
+        elif current_page == "portfolio":
+            show_portfolio_dashboard(components)
         else:
             st.error(f"Unknown page: {current_page}")
             show_selector()

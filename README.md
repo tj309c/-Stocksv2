@@ -1,32 +1,106 @@
-# 🎯 Smart Investment Dashboard
+# 🎯 Smart Investment Dashboard - StocksV2
 
-A zero-cost, high-speed, high-accuracy investment analysis platform with premium UI/UX that identifies when stocks, options, or crypto are "good buys" with confidence scoring.
+A comprehensive, zero-cost investment analysis platform with **5 specialized dashboards** for stocks, options, crypto, advanced analytics, and portfolio optimization. Features professional-grade analysis with WSB-style humor.
 
-## ✨ Features
+## 🚀 5 Specialized Dashboards
 
-### 📊 Core Features
-- **Real-time Market Data** via yfinance (FREE)
-- **Good Buy Detection Engine** with confidence scoring (0-100)
-- **Advanced Valuation Models** (DCF with Monte Carlo, Multiples)
-- **Technical Analysis** with pattern detection
-- **Options Flow Analysis** with unusual activity detection
-- **Sentiment Analysis** from StockTwits and news
-- **Institutional & Insider Trading Tracking**
-- **Premium UI/UX** with dark theme and clean visualizations
+### 📈 1. STOCKS Dashboard
+**Price & Technical Analysis**
+- Interactive price charts with RSI, MACD, ADX, OBV indicators
+- Bollinger Bands and SMA crossovers
+- AI-powered chart pattern recognition (Head & Shoulders, Cup & Handle, Double Bottom)
 
-### 🎯 Good Buy Engine
-The system analyzes multiple factors to determine optimal entry points:
-- **Valuation Score**: DCF vs current price
-- **Technical Score**: RSI, MACD, Support/Resistance
-- **Sentiment Score**: Social media momentum
-- **Momentum Score**: Price trends and pullbacks
-- **Fundamentals Score**: P/E, margins, growth
+**Fundamental Analysis**
+- Deep dive into P/E ratios, profit margins, ROE
+- Enterprise value metrics and sector comparison
 
-Outputs:
-- **GOOD BUY RANGE**: $XXX - $YYY
-- **TARGET PRICE**: $ZZZ
-- **CONFIDENCE SCORE**: ##/100
-- **Risk/Reward Ratio**
+**Valuation Models**
+- Discounted Cash Flow (DCF) with Monte Carlo simulation
+- Dividend Discount Model (DDM) for dividend stocks
+- Net Asset Value (NAV) for asset-heavy companies
+- Relative valuation (P/E, P/B, PEG multiples)
+
+**Risk Analysis**
+- Beta calculation and volatility metrics
+- Sharpe Ratio (risk-adjusted return)
+- Sortino Ratio (downside risk focus)
+- Rolling volatility charts
+- Maximum drawdown analysis
+
+**Good Buy Engine**
+- Multi-factor confidence scoring (0-100)
+- Optimal entry price ranges
+- Target prices and stop losses
+- Risk/reward ratio calculation
+
+### ⚡ 2. OPTIONS Dashboard
+**Options Flow Analysis**
+- Unusual options activity detection
+- High volume/OI ratio screening
+- Real-time options chain with Greeks
+
+**Greeks Analysis**
+- Delta, Gamma, Theta, Vega, Rho
+- IV percentile tracking
+- Put/Call ratio analysis
+
+**Strategy Builder**
+- Pre-built strategies (Iron Condor, Butterfly, Straddle, etc.)
+- Risk/reward visualization
+- Break-even analysis
+
+### 🚀 3. CRYPTO Dashboard
+**Crypto Analysis**
+- Real-time crypto price tracking (BTC, ETH, XRP, SOL, DOGE, etc.)
+- Technical indicators adapted for crypto
+- HODL strength calculator
+- Fear & Greed index
+
+**When Lambo Calculator**
+- Custom price target projections
+- Historical performance analysis
+
+### 🔬 4. ADVANCED ANALYTICS Dashboard
+**Model Backtesting**
+- Historical DCF accuracy testing
+- P/E relative valuation backtesting
+- MAPE (Mean Absolute Percentage Error) metrics
+- Model performance tracking over time
+
+**Future Forecasting**
+- Statistical price predictions
+- Prophet-based trend forecasting
+- Confidence intervals (80%, 90%, 95%)
+- Bull/Bear scenario analysis
+
+**Short Squeeze Detection**
+- High short interest identification
+- Squeeze momentum indicators
+- Days-to-cover calculation
+- Short squeeze leaderboard
+
+**Sector Comparison**
+- Relative valuation vs sector peers
+- Industry benchmarking
+- Sector rotation analysis
+
+### 💼 5. PORTFOLIO MANAGER Dashboard
+**Portfolio Optimization**
+- Modern Portfolio Theory implementation
+- Efficient frontier analysis
+- Risk-return optimization
+- Maximum Sharpe ratio portfolio
+
+**Asset Allocation**
+- Multi-asset portfolio builder
+- Optimal weight calculations
+- Diversification recommendations
+- Correlation matrix heatmap
+
+**Rebalancing**
+- Automatic rebalancing suggestions
+- Threshold-based alerts
+- Tax-efficient rebalancing strategies
 
 ## 🚀 Quick Start
 
@@ -63,15 +137,42 @@ streamlit run main.py
 ## 📁 Project Structure
 
 ```
-smart-investment-dashboard/
-├── main.py              # Main Streamlit dashboard
-├── data_fetcher.py      # Data fetching using yfinance
-├── analysis_engine.py   # Valuation, technical analysis, buy signals
-├── requirements.txt     # Python dependencies
-├── .env.example        # Environment variables template
-├── README.md           # This file
-└── data/              # Cache directory (auto-created)
-    └── cache/         # SQLite cache files
+StocksV2/
+├── main.py                      # Main entry point (original)
+├── main_refactored.py           # Optimized entry point with new features
+├── analysis_engine.py           # Valuation & technical analysis engines
+├── data_fetcher.py              # Market data fetching (yfinance)
+├── dashboard_stocks.py          # Stocks dashboard
+├── dashboard_options.py         # Options dashboard
+├── dashboard_crypto.py          # Crypto dashboard
+├── dashboard_advanced.py        # 🆕 Advanced analytics dashboard
+├── dashboard_portfolio.py       # 🆕 Portfolio optimization dashboard
+├── dashboard_selector.py        # Dashboard navigation
+├── theme_manager.py             # UI theming (light/dark mode)
+├── utils.py                     # Utility functions
+├── wsb_quotes.py                # WSB-style humor
+├── debug_tools.py               # Debug panel
+├── requirements.txt             # Dependencies
+├── src/                         # 🆕 Organized code structure
+│   ├── config/                  # Configuration management
+│   │   ├── constants.py         # All magic numbers
+│   │   └── settings.py          # Runtime settings
+│   ├── core/                    # Core functionality
+│   │   └── logging.py           # Comprehensive logging
+│   ├── components/              # Reusable components (future)
+│   ├── dashboards/              # Dashboard modules (future)
+│   └── utils/                   # Utilities (future)
+├── tests/                       # Unit tests
+│   ├── test_config.py
+│   └── test_utils.py
+├── logs/                        # Application logs
+│   ├── app.log
+│   ├── data.log
+│   ├── analysis.log
+│   ├── cache.log
+│   └── error.log
+└── data/                        # Cache directory
+    └── cache/                   # SQLite cache files
 ```
 
 ## 🔧 Configuration
@@ -90,11 +191,58 @@ REDDIT_CLIENT_SECRET=your_reddit_secret
 - Cache expiry: 5 minutes for real-time data
 - Supported cryptos: BTC, ETH, XRP
 
+## 🎯 Complete Feature List
+
+### Price & Technical Analysis
+✅ Interactive price charts  
+✅ RSI, MACD, ADX, OBV indicators  
+✅ Bollinger Bands, SMA crossovers  
+✅ AI-powered pattern recognition  
+
+### Fundamental Analysis
+✅ P/E ratios, margins, returns  
+✅ Enterprise value metrics  
+✅ Sector comparison & benchmarking  
+
+### Valuation Models
+✅ Discounted Cash Flow (DCF)  
+✅ Dividend Discount Model (DDM)  
+✅ Net Asset Value (NAV)  
+✅ Relative valuation (P/E, P/B, PEG)  
+
+### Risk Analysis
+✅ Beta calculation  
+✅ Sharpe & Sortino ratios  
+✅ Rolling volatility charts  
+✅ Maximum drawdown  
+
+### Model Backtesting
+✅ Historical DCF accuracy  
+✅ P/E relative valuation backtesting  
+✅ MAPE (Mean Absolute Percentage Error) metrics  
+
+### Future Forecasting
+✅ Statistical price predictions  
+✅ Confidence intervals (80%, 90%, 95%)  
+✅ Trend analysis  
+
+### Short Squeeze Detection
+✅ High short interest identification  
+✅ Squeeze momentum indicators  
+✅ Short squeeze leaderboard  
+
+### Portfolio Optimization
+✅ Efficient frontier analysis  
+✅ Modern Portfolio Theory  
+✅ Risk-return optimization  
+✅ Correlation matrix  
+✅ Auto-rebalancing suggestions  
+
 ## 📊 Data Sources
 
 ### Free Market Data (yfinance)
 - Real-time quotes
-- Historical OHLCV
+- Historical OHLCV  
 - Options chains with Greeks
 - Financial statements
 - Institutional holdings
