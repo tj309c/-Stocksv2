@@ -11,6 +11,10 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
+import logging
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 from wsb_quotes import (get_confidence_message, get_sentiment_comment, 
                         get_technical_comment, get_loading_message, 
                         get_error_message, get_dashboard_tagline)
@@ -30,6 +34,22 @@ from src.utils.global_ai_panel import render_floating_ai_button, check_and_run_g
 
 def show_stocks_dashboard(components, ticker="META"):
     """Display the stocks analysis dashboard"""
+    
+    # Initialize session state keys if not present
+    if 'data' not in st.session_state:
+        st.session_state.data = {}
+    if 'current_ticker' not in st.session_state:
+        st.session_state.current_ticker = ticker
+    if 'data_timestamp' not in st.session_state:
+        st.session_state.data_timestamp = None
+    if 'trigger_global_ai_analysis' not in st.session_state:
+        st.session_state.trigger_global_ai_analysis = False
+    if 'selected_ai_models' not in st.session_state:
+        st.session_state.selected_ai_models = []
+    if 'show_global_ai_panel' not in st.session_state:
+        st.session_state.show_global_ai_panel = False
+    if 'global_ai_results' not in st.session_state:
+        st.session_state.global_ai_results = {}
     
     tagline = get_dashboard_tagline("stocks")
     
@@ -90,8 +110,9 @@ def show_stocks_dashboard(components, ticker="META"):
     try:
         from src.utils.bls_valuation_display import show_employment_regime_panel
         show_employment_regime_panel()
-    except:
-        pass  # Silently skip if unavailable
+    except Exception as e:
+        # Silently skip if unavailable
+        logger.debug(f"BLS module not available: {e}")
     
     # Fetch data
     ticker = st.session_state.get("active_ticker", ticker_input)
