@@ -42,6 +42,11 @@ py_vollib>=1.0.1         # Options Greeks calculations
 # Portfolio Analysis
 quantstats               # Backtest metrics and portfolio analysis (replaces pyfolio)
 
+# === Global AI Analysis (Phase 3) ===
+aiohttp>=3.9.0           # Async HTTP client for parallel API calls
+openai>=1.0.0            # GPT-4 API client
+google-generativeai      # Gemini Pro API client
+
 # === Storage & Caching ===
 sqlalchemy>=2.0.0        # Database ORM
 pyarrow>=14.0.0          # Parquet file storage

@@ -26,6 +26,7 @@ from src.utils.indicator_panel import (get_indicator_panel, render_summary_bar,
                                        render_indicator_charts)
 from indicators.master_engine import get_master_engine
 from src.utils.delta_divergence_chart import render_delta_divergence_chart
+from src.utils.global_ai_panel import render_floating_ai_button, check_and_run_global_ai
 
 def show_stocks_dashboard(components, ticker="META"):
     """Display the stocks analysis dashboard"""
@@ -82,6 +83,9 @@ def show_stocks_dashboard(components, ticker="META"):
     # Render watchlist sidebar
     render_watchlist_sidebar()
     
+    # Global AI Analysis Button (floating)
+    render_floating_ai_button()
+    
     # BLS Employment Regime (NEW!)
     try:
         from src.utils.bls_valuation_display import show_employment_regime_panel
@@ -109,6 +113,12 @@ def show_stocks_dashboard(components, ticker="META"):
     
     fetcher = ProgressiveDataFetcher(components)
     data = fetcher.fetch_stock_data_progressive(ticker)
+    
+    # Store in session state for global AI analysis
+    if data and "error" not in data:
+        st.session_state.data = data
+        st.session_state.current_ticker = ticker
+        st.session_state.data_timestamp = data.get('timestamp', datetime.now().isoformat())
     
     if not data or "error" in data:
         st.error(f"❌ **Unable to load data for {ticker}**")
@@ -141,7 +151,7 @@ def show_stocks_dashboard(components, ticker="META"):
     show_buy_signal_section(data, components, diamond_hands)
     
     # Tabs for detailed analysis
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs([
         "📊 Overview",
         "💰 Valuation (DD)",
         "🎛️ Interactive DCF",
@@ -150,7 +160,8 @@ def show_stocks_dashboard(components, ticker="META"):
         "📊 Delta Divergence",
         "💬 Ape Sentiment",
         "🔗 Sentiment Correlation",
-        "🏢 Smart Money"
+        "🏢 Smart Money",
+        "🤖 AI Analysis"
     ])
     
     with tab1:
@@ -183,6 +194,56 @@ def show_stocks_dashboard(components, ticker="META"):
     
     with tab9:
         show_institutional_tab(data)
+    
+    with tab10:
+        # NEW: Global AI Analysis with multi-model consensus
+        st.markdown("### 🤖 Global AI Analysis")
+        st.markdown("Click the **'🚀 Analyze Everything'** button in the sidebar to run a comprehensive multi-model AI analysis.")
+        st.markdown("---")
+        
+        # Check and run global AI analysis if triggered
+        check_and_run_global_ai()
+        
+        # Instructions if not run yet
+        if not st.session_state.get('show_global_ai_panel', False):
+            st.info("""
+            **Multi-Model AI Consensus Analysis**
+            
+            This feature queries 4 leading AI models simultaneously:
+            - 🧠 **Claude 3.5 Sonnet** (Anthropic) - 40% weight
+            - 💬 **GPT-4 Turbo** (OpenAI) - 30% weight  
+            - 🔮 **Gemini Pro** (Google) - 20% weight
+            - ⚡ **Grok Beta** (xAI) - 10% weight
+            
+            **What gets analyzed:**
+            - All valuation models (DCF, Zero-FCF, multiples)
+            - 60+ technical indicators and chart patterns
+            - Sentiment data (Reddit, social media)
+            - Options flow and delta divergence
+            - Economic context (BLS data, macro trends)
+            - Insider trading activity
+            
+            **Output includes:**
+            - Weighted consensus recommendation (BUY/HOLD/SELL)
+            - Confidence score (0-100%)
+            - Bull/Bear case analysis
+            - Risk factors and suggested adjustments
+            - Individual model responses
+            
+            **Cost:** ~$0.05-0.15 per analysis (cached for 1 hour)
+            
+            👉 **Click the sidebar button to start!**
+            """)
+            
+            st.markdown("---")
+            st.markdown("**📋 API Key Setup:**")
+            st.code("""
+# Add to .streamlit/secrets.toml:
+ANTHROPIC_API_KEY = "sk-ant-..."
+OPENAI_API_KEY = "sk-..."
+GOOGLE_API_KEY = "..."
+XAI_API_KEY = "xai-..."
+            """, language="toml")
 
 
 def fetch_stock_data(_components, ticker):
