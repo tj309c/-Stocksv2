@@ -179,6 +179,23 @@ def get_light_theme_css():
         background: white;
         color: #1a1a1a;
     }
+    
+    /* Tooltips - Fix black on black issue */
+    [data-baseweb="tooltip"] {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+        border: 1px solid #00d4ff !important;
+    }
+    
+    [data-baseweb="tooltip"] div {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+    }
+    
+    /* Tooltip arrow */
+    [data-baseweb="tooltip"] [data-popper-arrow] {
+        background-color: #1a1a1a !important;
+    }
 </style>
 """
 
@@ -324,6 +341,23 @@ def get_dark_theme_css():
             flex: 100% !important;
         }
     }
+    
+    /* Tooltips - Fix readability (white text on dark background) */
+    [data-baseweb="tooltip"] {
+        background-color: #1a1f2e !important;
+        color: #ffffff !important;
+        border: 1px solid #00ff88 !important;
+    }
+    
+    [data-baseweb="tooltip"] div {
+        background-color: #1a1f2e !important;
+        color: #ffffff !important;
+    }
+    
+    /* Tooltip arrow */
+    [data-baseweb="tooltip"] [data-popper-arrow] {
+        background-color: #1a1f2e !important;
+    }
 </style>
 """
 
@@ -333,6 +367,33 @@ def apply_theme(dark_mode=False):
         st.markdown(get_dark_theme_css(), unsafe_allow_html=True)
     else:
         st.markdown(get_light_theme_css(), unsafe_allow_html=True)
+    
+    # Additional global CSS to fix all tooltip readability issues
+    st.markdown("""
+    <style>
+        /* Fix Streamlit's help icon tooltips */
+        [data-testid="stTooltipHoverTarget"] + div {
+            background-color: rgba(26, 31, 46, 0.95) !important;
+            color: white !important;
+            border: 1px solid #00ff88 !important;
+            padding: 8px 12px !important;
+            border-radius: 6px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* Fix tooltip content text */
+        [data-testid="stTooltipHoverTarget"] + div * {
+            color: white !important;
+        }
+        
+        /* Ensure all help tooltips are readable */
+        .stTooltip, [role="tooltip"] {
+            background-color: rgba(26, 31, 46, 0.95) !important;
+            color: white !important;
+            border: 1px solid #00ff88 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 def show_theme_toggle():
     """Show theme toggle in sidebar"""
