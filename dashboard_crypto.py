@@ -7,10 +7,8 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from datetime import datetime, timedelta
 from utils import (format_currency, format_percentage, format_large_number,
-                   format_price, get_color_for_value, get_confidence_color,
-                   safe_get, safe_divide)
+                   safe_divide)
 
 def show_crypto_dashboard(components, ticker="BTC-USD"):
     """Display the crypto analysis dashboard"""
@@ -60,8 +58,14 @@ def show_crypto_dashboard(components, ticker="BTC-USD"):
     
     ticker = st.session_state.get("active_ticker", ticker)
     
-    # Fetch data
-    with st.spinner(f"Loading {ticker.replace('-USD', '')} data... 🚀"):
+    # Fetch data with progressive loading
+    from src.utils.loading_indicators import spinner_with_timer
+    from src.config.performance_config import get_current_mode
+    
+    mode = get_current_mode()
+    estimated_time = 3 if mode.name == "Fast Mode ⚡" else 10
+    
+    with spinner_with_timer(f"Loading {ticker.replace('-USD', '')} data", estimated_time):
         data = fetch_crypto_data(components, ticker)
     
     if not data or "error" in data:

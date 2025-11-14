@@ -7,10 +7,8 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from datetime import datetime, timedelta
 from utils import (format_currency, format_percentage, format_large_number,
-                   format_price, get_color_for_value, get_confidence_color,
-                   safe_get, safe_divide)
+                   safe_divide)
 
 def show_options_dashboard(components, ticker="SPY"):
     """Display the options analysis dashboard"""
@@ -225,7 +223,8 @@ def show_options_chain_tab(data):
             exp_date = datetime.strptime(selected_exp, '%Y-%m-%d')
             dte = (exp_date - datetime.now()).days
             st.metric("Days to Expiry", dte, "DTE" if dte > 1 else "⚠️ 0DTE!" if dte == 0 else "EXPIRED")
-        except:
+        except (ValueError, TypeError) as e:
+            print(f"Date parsing error for options expiry: {e}")
             dte = 0
     
     if selected_exp and selected_exp in options_data["chains"]:
@@ -301,33 +300,184 @@ def show_options_chain_tab(data):
             st.info("📊 **Volume > OI** = New positions being opened (bullish signal)")
 
 
+def calculate_black_scholes_greeks(S, K, T, r, sigma, option_type='call'):
+    """
+    Calculate Black-Scholes Greeks
+    
+    Args:
+        S: Current stock price
+        K: Strike price
+        T: Time to expiration (years)
+        r: Risk-free rate (annual)
+        sigma: Implied volatility (annual)
+        option_type: 'call' or 'put'
+    """
+    from scipy.stats import norm
+    
+    if T <= 0:
+        return {'delta': 0, 'gamma': 0, 'theta': 0, 'vega': 0, 'rho': 0, 'price': 0}
+    
+    d1 = (np.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+    d2 = d1 - sigma*np.sqrt(T)
+    
+    if option_type == 'call':
+        price = S*norm.cdf(d1) - K*np.exp(-r*T)*norm.cdf(d2)
+        delta = norm.cdf(d1)
+        theta = (-(S*norm.pdf(d1)*sigma)/(2*np.sqrt(T)) 
+                - r*K*np.exp(-r*T)*norm.cdf(d2)) / 365
+    else:  # put
+        price = K*np.exp(-r*T)*norm.cdf(-d2) - S*norm.cdf(-d1)
+        delta = -norm.cdf(-d1)
+        theta = (-(S*norm.pdf(d1)*sigma)/(2*np.sqrt(T)) 
+                + r*K*np.exp(-r*T)*norm.cdf(-d2)) / 365
+    
+    gamma = norm.pdf(d1)/(S*sigma*np.sqrt(T))
+    vega = S*norm.pdf(d1)*np.sqrt(T) / 100  # Per 1% change in IV
+    
+    if option_type == 'call':
+        rho = K*T*np.exp(-r*T)*norm.cdf(d2) / 100  # Per 1% change in rate
+    else:
+        rho = -K*T*np.exp(-r*T)*norm.cdf(-d2) / 100
+    
+    return {
+        'price': price,
+        'delta': delta,
+        'gamma': gamma,
+        'theta': theta,
+        'vega': vega,
+        'rho': rho
+    }
+
+
 def show_greeks_tab(data):
     """Show Greeks analysis"""
     st.subheader("📈 Greeks Analysis")
     
-    st.info("🔨 Greeks calculator coming soon!")
-    st.markdown("""
-    ### What are Greeks? 🤔
+    current_price = data.get("current_price", 0)
+    ticker = data.get("ticker", "")
     
-    - **Delta (Δ)**: How much option price changes per $1 stock move
-        - Calls: 0 to 1 | Puts: -1 to 0
-        - 0.50 Delta = $0.50 option move per $1 stock move
+    if current_price == 0:
+        st.error("Unable to fetch current price")
+        return
     
-    - **Gamma (Γ)**: Rate of change of Delta
-        - High gamma = Delta changes fast (risky but profitable!)
-        - Highest at-the-money
+    st.markdown(f"### Current {ticker} Price: {format_currency(current_price)}")
     
-    - **Theta (Θ)**: Time decay per day
-        - How much option loses value each day
-        - Sellers love theta! Buyers hate it! ⏰
+    # Input parameters
+    col1, col2, col3, col4 = st.columns(4)
     
-    - **Vega (V)**: Sensitivity to IV changes
-        - High vega = Big moves when IV spikes
-        - Great for earnings plays
+    with col1:
+        strike = st.number_input("Strike Price ($)", 
+                                value=float(current_price), 
+                                min_value=float(current_price)*0.5,
+                                max_value=float(current_price)*1.5,
+                                step=1.0)
     
-    - **Rho (ρ)**: Sensitivity to interest rates
-        - Usually least important for retail
-    """)
+    with col2:
+        days_to_expiry = st.slider("Days to Expiry", 1, 365, 30)
+        time_to_expiry = days_to_expiry / 365.0
+    
+    with col3:
+        iv = st.slider("Implied Volatility (%)", 10, 150, 30) / 100.0
+    
+    with col4:
+        option_type = st.selectbox("Option Type", ["call", "put"])
+    
+    # Calculate Greeks
+    risk_free_rate = 0.045  # 4.5% risk-free rate
+    greeks = calculate_black_scholes_greeks(
+        S=current_price,
+        K=strike,
+        T=time_to_expiry,
+        r=risk_free_rate,
+        sigma=iv,
+        option_type=option_type
+    )
+    
+    # Display results
+    st.markdown("---")
+    st.markdown("### 📊 Option Greeks & Price")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Option Price", format_currency(greeks['price']))
+        moneyness = ((current_price - strike) / strike * 100)
+        if option_type == 'call':
+            money_status = "ITM ✅" if current_price > strike else ("ATM" if abs(moneyness) < 2 else "OTM")
+        else:
+            money_status = "ITM ✅" if current_price < strike else ("ATM" if abs(moneyness) < 2 else "OTM")
+        st.caption(f"{money_status} • {moneyness:+.1f}%")
+    
+    with col2:
+        st.metric("Delta (Δ)", f"{greeks['delta']:.4f}")
+        st.caption(f"${abs(greeks['delta']):.2f} move per $1 stock move")
+    
+    with col3:
+        st.metric("Gamma (Γ)", f"{greeks['gamma']:.4f}")
+        st.caption(f"Delta changes by {greeks['gamma']:.4f}")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Theta (Θ)", f"{greeks['theta']:.4f}")
+        st.caption(f"${abs(greeks['theta']):.2f} decay per day ⏰")
+    
+    with col2:
+        st.metric("Vega (V)", f"{greeks['vega']:.4f}")
+        st.caption(f"${greeks['vega']:.2f} per 1% IV change")
+    
+    with col3:
+        st.metric("Rho (ρ)", f"{greeks['rho']:.4f}")
+        st.caption(f"${abs(greeks['rho']):.2f} per 1% rate change")
+    
+    # Scenario analysis
+    st.markdown("---")
+    st.markdown("### 🎯 Scenario Analysis")
+    
+    stock_moves = [-10, -5, -2, 0, 2, 5, 10]
+    scenarios = []
+    
+    for move in stock_moves:
+        new_price = current_price * (1 + move/100)
+        new_greeks = calculate_black_scholes_greeks(
+            S=new_price, K=strike, T=time_to_expiry, 
+            r=risk_free_rate, sigma=iv, option_type=option_type
+        )
+        profit = (new_greeks['price'] - greeks['price']) * 100  # Per contract
+        
+        scenarios.append({
+            'Stock Move': f"{move:+.0f}%",
+            'Stock Price': format_currency(new_price),
+            'Option Price': format_currency(new_greeks['price']),
+            'P&L': format_currency(profit),
+            'Delta': f"{new_greeks['delta']:.3f}"
+        })
+    
+    df_scenarios = pd.DataFrame(scenarios)
+    st.dataframe(df_scenarios, use_container_width=True, hide_index=True)
+    
+    # Educational content
+    with st.expander("📚 What do these Greeks mean?"):
+        st.markdown("""
+        - **Delta (Δ)**: How much option price changes per $1 stock move
+            - Calls: 0 to 1 | Puts: -1 to 0
+            - 0.50 Delta = $0.50 option move per $1 stock move
+        
+        - **Gamma (Γ)**: Rate of change of Delta
+            - High gamma = Delta changes fast (risky but profitable!)
+            - Highest at-the-money
+        
+        - **Theta (Θ)**: Time decay per day
+            - How much option loses value each day
+            - Sellers love theta! Buyers hate it! ⏰
+        
+        - **Vega (V)**: Sensitivity to IV changes
+            - High vega = Big moves when IV spikes
+            - Great for earnings plays
+        
+        - **Rho (ρ)**: Sensitivity to interest rates
+            - Usually least important for retail
+        """)
     
     st.warning("⚠️ **Remember**: Options can expire worthless! Don't YOLO your rent money! 🏠")
 

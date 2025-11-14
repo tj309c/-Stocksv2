@@ -11,7 +11,6 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
-import ta
 from wsb_quotes import (get_confidence_message, get_sentiment_comment, 
                         get_technical_comment, get_loading_message, 
                         get_error_message, get_dashboard_tagline)
@@ -19,13 +18,21 @@ from utils import (format_currency, format_percentage, format_large_number,
                    format_price, get_color_for_value, get_confidence_color,
                    safe_get, safe_divide, sanitize_dict_for_cache)
 from enhanced_valuation_ui import show_enhanced_valuation_tab
+from src.utils.watchlist_manager import render_watchlist_sidebar, render_add_to_watchlist_button
+from src.utils.market_hours import render_compact_market_status
+from src.utils.export_utils import render_export_buttons
+from src.utils.sentiment_correlation_display import show_sentiment_correlation_tab
+from src.utils.indicator_panel import (get_indicator_panel, render_summary_bar, 
+                                       render_indicator_charts)
+from indicators.master_engine import get_master_engine
+from src.utils.delta_divergence_chart import render_delta_divergence_chart
 
 def show_stocks_dashboard(components, ticker="META"):
     """Display the stocks analysis dashboard"""
     
     tagline = get_dashboard_tagline("stocks")
     
-    # Professional header with WSB humor
+    # Professional header with WSB humor and market hours
     st.markdown("""
     <div style="text-align: center; padding: 20px 0 10px 0;">
         <h1 style="font-size: 2.5rem; margin-bottom: 5px; font-weight: 700; letter-spacing: -0.5px;">
@@ -37,54 +44,112 @@ def show_stocks_dashboard(components, ticker="META"):
     </div>
     """.replace("{tagline}", tagline), unsafe_allow_html=True)
     
-    # Ticker input section
-    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+    # Market hours indicator
+    st.markdown(f'<div style="text-align: center;">{render_compact_market_status()}</div>', unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Ticker input section with watchlist integration
+    col1, col2, col3, col4, col5 = st.columns([2.5, 0.5, 1, 1, 1])
     
     with col1:
         ticker_input = st.text_input(
             "Enter Ticker Symbol",
             value=ticker,
+            placeholder="e.g., AAPL, TSLA, GME",
             help="Enter a stock ticker (e.g., AAPL, TSLA, GME, AMC)"
         ).upper()
     
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
+        if ticker_input:
+            render_add_to_watchlist_button(ticker_input)
+    
+    with col3:
+        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🔍 Analyze", type="primary", key="analyze_stock"):
             ticker = ticker_input
             st.session_state.active_ticker = ticker
     
-    with col3:
+    with col4:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🔄 Refresh", key="refresh_stock"):
             st.rerun()
     
-    with col4:
+    with col5:
         st.markdown("<br>", unsafe_allow_html=True)
         diamond_hands = st.checkbox("💎🙌", value=True, help="Diamond Hands Mode")
+    
+    # Render watchlist sidebar
+    render_watchlist_sidebar()
+    
+    # BLS Employment Regime (NEW!)
+    try:
+        from src.utils.bls_valuation_display import show_employment_regime_panel
+        show_employment_regime_panel()
+    except:
+        pass  # Silently skip if unavailable
     
     # Fetch data
     ticker = st.session_state.get("active_ticker", ticker_input)
     
-    loading_msg = get_loading_message()
-    with st.spinner(f"{loading_msg} ({ticker})"):
-        data = fetch_stock_data(components, ticker)
+    # Handle empty ticker gracefully
+    if not ticker or not ticker.strip():
+        st.info("👆 **Enter a stock ticker above to begin your analysis**")
+        st.markdown("""
+        **Popular tickers to try:**
+        - 🚀 GME, AMC - Meme stocks
+        - 💎 TSLA, NVDA - Tech growth
+        - 🏦 AAPL, MSFT - Blue chips
+        - 📈 SPY, QQQ - Index ETFs
+        """)
+        return
+    
+    # Progressive loading with visual feedback
+    from src.utils.loading_indicators import ProgressiveDataFetcher
+    
+    fetcher = ProgressiveDataFetcher(components)
+    data = fetcher.fetch_stock_data_progressive(ticker)
     
     if not data or "error" in data:
-        error_msg = get_error_message()
-        st.error(f"{error_msg} Ticker: {ticker}")
-        st.info("💡 Try: GME, AMC, TSLA, NVDA, or any ticker that hasn't bankrupted you yet")
+        st.error(f"❌ **Unable to load data for {ticker}**")
+        st.markdown("""
+        **This could mean:**
+        - Invalid or misspelled ticker symbol
+        - Stock may be delisted or suspended
+        - Temporary data service issue
+        
+        **What to try:**
+        - Double-check the ticker spelling
+        - Try another ticker: AAPL, TSLA, GME, NVDA
+        - Click 🔄 Refresh to try again
+        """)
         return
+    
+    # Data freshness indicator with load time
+    col_fresh, col_refresh = st.columns([4, 1])
+    with col_fresh:
+        timestamp = data.get('timestamp', 'Unknown')
+        fetch_time = data.get('fetch_time', 'N/A')
+        mode = data.get('mode', 'Unknown')
+        st.caption(f"📊 **Data fetched:** {timestamp} | **Load time:** {fetch_time} | **Mode:** {mode}")
+    with col_refresh:
+        if st.button("🔄 Clear Cache", key="clear_cache_btn"):
+            st.cache_data.clear()
+            st.success("Cache cleared! Click Analyze to refresh.")
     
     # Main metrics and buy signal
     show_buy_signal_section(data, components, diamond_hands)
     
     # Tabs for detailed analysis
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
         "📊 Overview",
         "💰 Valuation (DD)",
         "🎛️ Interactive DCF",
         "📈 Technical (Charts)",
+        "🎯 Pro Indicators (60+)",
+        "📊 Delta Divergence",
         "💬 Ape Sentiment",
+        "🔗 Sentiment Correlation",
         "🏢 Smart Money"
     ])
     
@@ -102,28 +167,85 @@ def show_stocks_dashboard(components, ticker="META"):
         show_technical_tab(data, components)
     
     with tab5:
-        show_sentiment_tab(data, components)
+        # NEW: Professional indicators with AI/ML
+        show_pro_indicators_tab(data, components)
     
     with tab6:
+        # NEW: Delta divergence options chart
+        show_delta_divergence_tab(data)
+    
+    with tab7:
+        show_sentiment_tab(data, components)
+    
+    with tab8:
+        # NEW: Sentiment-market correlation analysis
+        show_sentiment_correlation_tab(data["ticker"])
+    
+    with tab9:
         show_institutional_tab(data)
 
 
-@st.cache_data(ttl=300)
 def fetch_stock_data(_components, ticker):
-    """Fetch all stock data with caching"""
+    """Fetch all stock data with caching and mode-aware parallel fetching"""
+    from src.config.performance_config import (
+        get_adjusted_ttl, 
+        show_eta_indicator,
+        should_fetch_institutional,
+        should_fetch_sentiment,
+        calculate_eta,
+        get_current_mode
+    )
+    import concurrent.futures
+    import time
+    
     components = _components
+    mode = get_current_mode()
+    
+    # Show ETA if in Deep Mode
+    if mode.show_eta:
+        eta_components = ["stock_data", "quote", "fundamentals"]
+        if should_fetch_institutional():
+            eta_components.append("institutional")
+        if should_fetch_sentiment():
+            eta_components.extend(["sentiment_scraping"])
+        
+        eta_info = calculate_eta(eta_components)
+        st.info(f"⏱️ Estimated load time: **{eta_info['eta_formatted']}** ({mode.name})")
+    
     try:
-        data = {
-            "ticker": ticker,
-            "stock_data": components["fetcher"].get_stock_data(ticker),
-            "quote": components["fetcher"].get_realtime_quote(ticker),
-            "fundamentals": components["fetcher"].get_fundamentals(ticker),
-            "institutional": components["fetcher"].get_institutional_data(ticker),
-            "sentiment": {
-                "stocktwits": components["sentiment"].get_stocktwits_sentiment(ticker),
-                "news": components["sentiment"].get_news_sentiment(ticker)
+        start_time = time.time()
+        
+        # Use dynamic TTL based on performance mode
+        ttl = get_adjusted_ttl(300)  # Base 5 minutes
+        
+        # Parallel fetching for independent data sources
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            # Submit all fetch operations in parallel
+            future_stock = executor.submit(components["fetcher"].get_stock_data, ticker)
+            future_quote = executor.submit(components["fetcher"].get_realtime_quote, ticker)
+            future_fundamentals = executor.submit(components["fetcher"].get_fundamentals, ticker)
+            future_institutional = executor.submit(components["fetcher"].get_institutional_data, ticker)
+            
+            # Sentiment fetching (may be skipped in Fast Mode)
+            future_stocktwits = executor.submit(components["sentiment"].get_stocktwits_sentiment, ticker)
+            future_news = executor.submit(components["sentiment"].get_news_sentiment, ticker)
+            
+            # Collect results
+            data = {
+                "ticker": ticker,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"),
+                "stock_data": future_stock.result(),
+                "quote": future_quote.result(),
+                "fundamentals": future_fundamentals.result(),
+                "institutional": future_institutional.result(),
+                "sentiment": {
+                    "stocktwits": future_stocktwits.result(),
+                    "news": future_news.result()
+                }
             }
-        }
+        
+        elapsed = time.time() - start_time
+        data["fetch_time"] = f"{elapsed:.2f}s"
         
         # Process DataFrame
         if data["stock_data"] and "history" in data["stock_data"]:
@@ -245,6 +367,16 @@ def show_overview_tab(data):
         st.subheader("📈 Price Chart")
         
         if not df.empty:
+            from src.utils.loading_indicators import show_skeleton_chart
+            
+            # Show skeleton while rendering chart
+            chart_placeholder = st.empty()
+            with chart_placeholder.container():
+                st.caption("⏳ Rendering price chart...")
+                show_skeleton_chart(height=500)
+            
+            # Render actual chart
+            chart_placeholder.empty()
             fig = make_subplots(
                 rows=2, cols=1,
                 shared_xaxes=True,
@@ -339,6 +471,24 @@ def show_overview_tab(data):
             avg_vol = info.get('averageVolume', 0)
             if avg_vol > 0:
                 st.markdown(f"**Avg Volume:** {format_large_number(avg_vol)}")
+    
+    # Export section
+    st.markdown("---")
+    quote = data.get("quote", {})
+    render_export_buttons(
+        ticker=data.get("ticker", ""),
+        data={
+            'current_price': quote.get('regularMarketPrice', 0) if quote else 0,
+            'change': quote.get('regularMarketChange', 0) if quote else 0,
+            'change_pct': f"{quote.get('regularMarketChangePercent', 0):.2f}%" if quote else "N/A",
+            'volume': quote.get('regularMarketVolume', 0) if quote else 0,
+            'market_cap': info.get('marketCap', 0),
+            'technical': {},
+            'df': df
+        },
+        show_csv=True,
+        show_chart=False
+    )
 
 
 def show_valuation_tab(data, components):
@@ -370,17 +520,32 @@ def show_valuation_tab(data, components):
             current_price = valuation.get('current_price', 0)
             upside = valuation.get('upside', 0)
             
-            st.markdown(f"**Fair Value:** {format_currency(fair_value)}")
-            st.markdown(f"**Current Price:** {format_currency(current_price)}")
-            
-            if upside > 20:
-                st.success(f"**Upside:** {format_percentage(upside)} 🚀 (UNDERVALUED!)")
-            elif upside > 0:
-                st.info(f"**Upside:** {format_percentage(upside)} 📈")
+            # Check for invalid valuation (zero or negative)
+            if fair_value <= 0 or current_price <= 0:
+                st.error("❌ **Cannot Calculate Fair Value**")
+                st.markdown("""
+                **Possible reasons:**
+                - Insufficient financial data (company too new)
+                - Negative or missing cash flows
+                - Missing balance sheet information
+                
+                **What to try:**
+                - Use the **🎛️ Interactive DCF** tab to manually input values
+                - Check the **📐 Multiples** section for alternative valuation methods
+                - Try a more established company ticker
+                """)
             else:
-                st.warning(f"**Downside:** {format_percentage(upside)} 📉")
-            
-            st.markdown(f"**Method:** {valuation.get('method', 'Unknown')}")
+                st.markdown(f"**Fair Value:** {format_currency(fair_value)}")
+                st.markdown(f"**Current Price:** {format_currency(current_price)}")
+                
+                if upside > 20:
+                    st.success(f"**Upside:** {format_percentage(upside)} 🚀 (UNDERVALUED!)")
+                elif upside > 0:
+                    st.info(f"**Upside:** {format_percentage(upside)} 📈")
+                else:
+                    st.warning(f"**Downside:** {format_percentage(upside)} 📉")
+                
+                st.markdown(f"**Method:** {valuation.get('method', 'Unknown')}")
             
             # Scenarios
             if "scenarios" in valuation:
@@ -418,6 +583,22 @@ def show_valuation_tab(data, components):
                     st.error(f"Error creating scenarios chart: {str(e)}")
         else:
             st.warning(f"⚠️ Valuation unavailable: {valuation.get('error', 'Unknown error')}")
+        
+        # BLS-Enhanced Valuation (NEW!)
+        if "error" not in valuation and fair_value > 0:
+            try:
+                from src.utils.bls_valuation_display import show_bls_enhanced_valuation
+                sector = info.get('sector', 'Unknown')
+                show_bls_enhanced_valuation(
+                    ticker=data.get("ticker", ""),
+                    sector=sector,
+                    base_dcf_value=fair_value,
+                    current_price=current_price
+                )
+            except Exception as e:
+                # BLS module unavailable - show warning
+                st.info("💡 BLS employment analysis available with additional setup")
+                logger.debug(f"BLS module not available: {e}")
     
     with col2:
         st.markdown("### 📐 Multiples")
@@ -445,7 +626,9 @@ def show_valuation_tab(data, components):
 
 
 def show_technical_tab(data, components):
-    """Show technical analysis"""
+    """Show technical analysis with progressive loading"""
+    from src.utils.loading_indicators import show_skeleton_chart, show_skeleton_metric
+    
     st.subheader("📈 Technical Analysis (TA)")
     
     df = data.get("df", pd.DataFrame())
@@ -454,12 +637,29 @@ def show_technical_tab(data, components):
         st.warning("Insufficient data for TA")
         return
     
+    # Show skeleton loaders while analyzing
+    metrics_placeholder = st.empty()
+    chart_placeholder = st.empty()
+    
+    with metrics_placeholder.container():
+        st.caption("⏳ Analyzing technical indicators...")
+        show_skeleton_metric(count=3)
+    
+    with chart_placeholder.container():
+        show_skeleton_chart(height=400)
+    
+    # Perform analysis
     technical = components["technical"].analyze(df)
+    
+    # Clear placeholders
+    metrics_placeholder.empty()
+    chart_placeholder.empty()
     
     if "error" in technical:
         st.error(f"TA Error: {technical['error']}")
         return
     
+    # Row 1: RSI, MACD, Bollinger Bands
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -487,8 +687,63 @@ def show_technical_tab(data, components):
             st.warning("**BEARISH** Watch out! 📉")
     
     with col3:
+        # Bollinger Bands
+        st.markdown("### 📊 Bollinger Bands")
+        bb_data = technical.get("bollinger", {})
+        bb_upper = bb_data.get("upper", 0)
+        bb_middle = bb_data.get("middle", 0)
+        bb_lower = bb_data.get("lower", 0)
+        bb_signal = bb_data.get("signal", "neutral")
+        current_price = bb_data.get("price", 0)
+        
+        st.markdown(f"**Upper:** {format_currency(bb_upper)}")
+        st.markdown(f"**Middle:** {format_currency(bb_middle)}")
+        st.markdown(f"**Lower:** {format_currency(bb_lower)}")
+        
+        if bb_signal == "oversold":
+            st.success("📍 Below lower band! Buy signal! 🚀")
+        elif bb_signal == "overbought":
+            st.warning("⚠️ Above upper band! Overbought!")
+        else:
+            st.info("📊 Within bands - Normal range")
+    
+    # Row 2: Moving Averages and Support/Resistance
+    st.markdown("---")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        # SMA 50
+        st.markdown("### 📈 SMA 50")
+        price_action = technical.get("price_action", {})
+        sma_50 = price_action.get("sma_50", 0)
+        above_sma_50 = price_action.get("above_sma_50", False)
+        current_price = price_action.get("price", 0)
+        
+        st.markdown(f"**SMA 50:** {format_currency(sma_50)}")
+        st.markdown(f"**Current:** {format_currency(current_price)}")
+        
+        if above_sma_50:
+            st.success("✅ Above SMA 50 - Bullish!")
+        else:
+            st.warning("⚠️ Below SMA 50 - Bearish")
+    
+    with col2:
+        # SMA 200
+        st.markdown("### 📈 SMA 200")
+        sma_200 = price_action.get("sma_200", 0)
+        above_sma_200 = price_action.get("above_sma_200", False)
+        
+        st.markdown(f"**SMA 200:** {format_currency(sma_200)}")
+        st.markdown(f"**Current:** {format_currency(current_price)}")
+        
+        if above_sma_200:
+            st.success("✅ Above SMA 200 - Strong trend!")
+        else:
+            st.warning("⚠️ Below SMA 200 - Weak trend")
+    
+    with col3:
         # Support/Resistance
-        st.markdown("### 🎯 Levels")
+        st.markdown("### 🎯 Support/Resistance")
         support = technical.get("support_resistance", {}).get("support", 0)
         resistance = technical.get("support_resistance", {}).get("resistance", 0)
         
@@ -497,6 +752,8 @@ def show_technical_tab(data, components):
         
         if technical.get("support_resistance", {}).get("near_support", False):
             st.success("📍 Near support! Buy opportunity!")
+        elif technical.get("support_resistance", {}).get("near_resistance", False):
+            st.warning("🚧 Near resistance! Take profits?")
     
     # Patterns
     st.markdown("---")
@@ -513,6 +770,133 @@ def show_technical_tab(data, components):
             )
     else:
         st.info("No major patterns detected. Sideways trading 📊")
+
+
+def show_pro_indicators_tab(data, components):
+    """Show professional technical indicators with AI/ML (60+ indicators)"""
+    st.markdown("## 🎯 Professional Technical Indicators")
+    st.markdown("""
+    **TradingView Pro Equivalent** - 60+ indicators across 7 tiers:
+    - 📈 **Tier 1 (Core)**: Essential indicators (SMA, EMA, RSI, MACD, Bollinger)
+    - 📊 **Tier 2 (Pro)**: Professional tools (Ichimoku, Fibonacci, Stochastic, ADX)
+    - 📦 **Tier 3 (Volume)**: Volume analysis (Volume Profile, A/D Line, PVT)
+    - ⚡ **Tier 4 (Momentum)**: Momentum oscillators (ROC, TRIX, Connors RSI)
+    - 🌐 **Tier 5 (Market Breadth)**: Market-wide indicators (Put/Call, VIX, TRIN)
+    - 📐 **Tier 6 (Quant)**: Quantitative analysis (Beta, Alpha, Sharpe, Sortino)
+    - 🤖 **Tier 7 (AI/ML)**: AI-powered predictions (ML Trend, Regime Detection)
+    """)
+    
+    # Get historical data for indicators
+    try:
+        df = data.get('historical_data')
+        if df is None or df.empty:
+            st.warning("⚠️ No historical data available. Fetching...")
+            # Fetch data
+            ticker = data.get('ticker', 'META')
+            import yfinance as yf
+            stock = yf.Ticker(ticker)
+            df = stock.history(period='1y')
+        
+        if df.empty:
+            st.error("❌ Unable to fetch historical data for indicator calculation")
+            return
+        
+        st.success(f"✅ Loaded {len(df)} trading days of data")
+        
+        # Initialize indicator components
+        panel = get_indicator_panel()
+        engine = get_master_engine()
+        
+        # Render control panel
+        with st.expander("🎛️ Indicator Control Panel", expanded=False):
+            selected_indicators = panel.render()
+        
+        # Quick tier selector
+        st.markdown("### 🚀 Quick Select")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            calculate_core = st.checkbox("📈 Core Indicators", value=True)
+        with col2:
+            calculate_pro = st.checkbox("📊 Pro + Volume", value=False)
+        with col3:
+            calculate_ai = st.checkbox("🤖 AI/ML Indicators", value=False)
+        
+        # Determine which tiers to calculate
+        tiers_to_calculate = []
+        if calculate_core:
+            tiers_to_calculate.extend([1])
+        if calculate_pro:
+            tiers_to_calculate.extend([2, 3, 4])
+        if calculate_ai:
+            tiers_to_calculate.extend([5, 6, 7])
+        
+        if not tiers_to_calculate:
+            st.info("💡 Select at least one tier to calculate indicators")
+            return
+        
+        # Calculate indicators
+        with st.spinner(f"🧮 Calculating {len(tiers_to_calculate)} tiers of indicators..."):
+            df_with_indicators = engine.calculate_all(df, tiers=tiers_to_calculate)
+            summary = engine.get_summary(df_with_indicators)
+        
+        st.success(f"✅ Calculated {len(tiers_to_calculate)} tiers successfully!")
+        
+        # Show summary bar
+        st.markdown("---")
+        render_summary_bar(summary)
+        
+        st.markdown("---")
+        
+        # Show indicator charts
+        render_indicator_charts(df_with_indicators, selected_indicators)
+        
+        # Raw indicator data viewer
+        with st.expander("📊 View Raw Indicator Data", expanded=False):
+            st.markdown("### Latest Indicator Values")
+            
+            # Show latest values in a nice format
+            latest = df_with_indicators.iloc[-1]
+            
+            # Group by category
+            core_cols = [col for col in df_with_indicators.columns if any(x in col for x in ['SMA', 'EMA', 'RSI', 'MACD', 'BB'])]
+            volume_cols = [col for col in df_with_indicators.columns if any(x in col for x in ['Volume', 'OBV', 'AD', 'PVT'])]
+            momentum_cols = [col for col in df_with_indicators.columns if any(x in col for x in ['ROC', 'TRIX', 'Stoch', 'Williams', 'Momentum'])]
+            ai_cols = [col for col in df_with_indicators.columns if any(x in col for x in ['ML', 'Regime', 'Anomaly', 'Score'])]
+            
+            if core_cols:
+                st.markdown("#### 📈 Core Indicators")
+                core_data = {col: latest[col] for col in core_cols if col in latest.index}
+                st.json(core_data)
+            
+            if volume_cols:
+                st.markdown("#### 📦 Volume Indicators")
+                volume_data = {col: latest[col] for col in volume_cols if col in latest.index}
+                st.json(volume_data)
+            
+            if momentum_cols:
+                st.markdown("#### ⚡ Momentum Indicators")
+                momentum_data = {col: latest[col] for col in momentum_cols if col in latest.index}
+                st.json(momentum_data)
+            
+            if ai_cols:
+                st.markdown("#### 🤖 AI/ML Indicators")
+                ai_data = {col: latest[col] for col in ai_cols if col in latest.index}
+                st.json(ai_data)
+            
+            # Full dataframe
+            st.markdown("#### 📊 Full DataFrame (Last 20 Rows)")
+            st.dataframe(df_with_indicators.tail(20), use_container_width=True)
+    
+    except Exception as e:
+        st.error(f"❌ Error calculating indicators: {str(e)}")
+        st.exception(e)
+
+
+def show_delta_divergence_tab(data):
+    """Show Delta Divergence Options Chart"""
+    ticker = data.get('ticker', 'META')
+    render_delta_divergence_chart(ticker)
 
 
 def show_sentiment_tab(data, components):
@@ -736,10 +1120,11 @@ def show_sentiment_tab(data, components):
 
 
 def show_institutional_tab(data):
-    """Show institutional holdings"""
+    """Show institutional holdings and Congressional trades"""
     st.subheader("🏢 Smart Money Tracker")
     
     inst_data = data["institutional"]
+    ticker = data.get("ticker", "")
     
     col1, col2 = st.columns(2)
     
@@ -773,3 +1158,13 @@ def show_institutional_tab(data):
                     st.success("🚨 Insiders are buying! Bullish signal! 🚀")
     else:
         st.info("No insider transaction data")
+    
+    # Congressional Trading Activity (NEW!)
+    if ticker:
+        try:
+            from src.utils.congressional_display import show_congressional_trades
+            show_congressional_trades(ticker, days=90)
+        except ImportError:
+            st.warning("⚠️ Congressional trading data not available. Install required dependencies.")
+        except Exception as e:
+            st.error(f"Error loading Congressional trades: {e}")

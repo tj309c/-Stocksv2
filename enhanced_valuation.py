@@ -51,13 +51,21 @@ class EnhancedDCFCalculator:
             Dictionary with detailed DCF calculation results
         """
         try:
-            # Validate inputs
+            # Enhanced input validation
             if shares_outstanding <= 0:
                 return {"error": "Shares outstanding must be positive"}
+            if wacc <= 0 or wacc > 0.5:
+                return {"error": "WACC must be between 0% and 50%"}
             if wacc <= terminal_growth:
                 return {"error": "WACC must be greater than terminal growth rate"}
+            if terminal_growth < 0 or terminal_growth > 0.1:
+                return {"error": "Terminal growth must be between 0% and 10%"}
             if base_cash_flow == 0:
                 return {"error": "Base cash flow cannot be zero"}
+            if growth_rate < -0.5 or growth_rate > 1.0:
+                return {"error": "Growth rate must be between -50% and 100%"}
+            if projection_years < 1 or projection_years > 20:
+                return {"error": "Projection years must be between 1 and 20"}
             
             # Project future cash flows
             projected_cfs = []

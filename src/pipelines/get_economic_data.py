@@ -76,8 +76,18 @@ class EconomicDataPipeline:
     # FRED API Methods (Federal Reserve Economic Data)
     # =========================================================================
     
+    def get_inflation_data(self, years: int = 10) -> Optional[pd.DataFrame]:
+        """Get inflation data (mode-aware)"""
+        from src.config.performance_config import should_fetch_economic, get_adjusted_ttl
+        
+        if not should_fetch_economic():
+            return None
+        
+        ttl = get_adjusted_ttl(86400)  # Base 24 hours
+        return self._get_inflation_data_cached(years, ttl)
+    
     @st.cache_data(ttl=86400, show_spinner=False)  # Cache for 24 hours
-    def get_inflation_data(_self, years: int = 10) -> Optional[pd.DataFrame]:
+    def _get_inflation_data_cached(_self, years: int, ttl: int) -> Optional[pd.DataFrame]:
         """
         Fetch Consumer Price Index (CPI) data - core inflation metric.
         

@@ -5,7 +5,6 @@ Now with 3 dashboards: Stocks, Options, and Crypto!
 With comprehensive debugging and light/dark mode support!
 """
 import streamlit as st
-from datetime import datetime
 
 # Import custom modules
 from data_fetcher import MarketDataFetcher, SentimentScraper
@@ -22,6 +21,12 @@ from dashboard_portfolio import show_portfolio_dashboard
 # Import utilities
 from theme_manager import apply_theme, show_theme_toggle
 from debug_tools import show_debug_panel
+from src.utils.mobile_optimization import apply_mobile_optimizations
+from src.utils.accessibility import apply_accessibility_improvements
+from src.config.performance_config import (
+    initialize_performance_mode,
+    show_performance_mode_indicator
+)
 
 # ========== PAGE CONFIGURATION ==========
 st.set_page_config(
@@ -35,6 +40,11 @@ st.set_page_config(
 # Show theme toggle and apply selected theme (defaults to light)
 dark_mode = show_theme_toggle()
 apply_theme(dark_mode)
+
+# ========== MOBILE & ACCESSIBILITY ==========
+# Apply mobile optimizations and accessibility improvements
+apply_mobile_optimizations()
+apply_accessibility_improvements()
 
 # ========== OLD CSS REMOVED - NOW HANDLED BY THEME MANAGER ==========
 # Custom CSS is now generated dynamically by theme_manager.py
@@ -51,6 +61,9 @@ if "current_options_ticker" not in st.session_state:
     st.session_state.current_options_ticker = "SPY"
 if "current_crypto" not in st.session_state:
     st.session_state.current_crypto = "BTC-USD"
+
+# Initialize performance mode
+initialize_performance_mode()
 
 # ========== INITIALIZE COMPONENTS ==========
 @st.cache_resource
@@ -81,6 +94,9 @@ else:
     
     # Display dashboard switcher in sidebar
     show_dashboard_switcher()
+    
+    # Show performance mode indicator and toggle
+    show_performance_mode_indicator()
     
     # Show debug panel in sidebar
     show_debug_panel()

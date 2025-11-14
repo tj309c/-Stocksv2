@@ -1,6 +1,6 @@
 """
 Advanced Analytics Dashboard 🔬
-Backtesting, Forecasting, and Short Squeeze Detection
+Backtesting, Forecasting, Short Squeeze Detection, and Zero-FCF Valuation
 For the data scientists and quants
 """
 import streamlit as st
@@ -11,8 +11,8 @@ from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 from scipy import stats
 from utils import (format_currency, format_percentage, format_large_number,
-                   format_price, get_color_for_value, get_confidence_color,
-                   safe_get, safe_divide)
+                   safe_divide)
+from src.utils.zero_fcf_display import show_zero_fcf_valuation_tab as display_zero_fcf_tab
 
 
 def show_advanced_dashboard(components, ticker="SPY"):
@@ -48,8 +48,14 @@ def show_advanced_dashboard(components, ticker="SPY"):
     
     ticker = st.session_state.get("active_ticker", ticker_input)
     
-    # Fetch data
-    with st.spinner(f"Running advanced analytics for {ticker}... 🔬"):
+    # Fetch data with time estimation
+    from src.utils.loading_indicators import spinner_with_timer
+    from src.config.performance_config import get_current_mode
+    
+    mode = get_current_mode()
+    estimated_time = 5 if mode.name == "Fast Mode ⚡" else 15
+    
+    with spinner_with_timer(f"Running advanced analytics for {ticker}", estimated_time):
         data = fetch_advanced_data(components, ticker)
     
     if not data or "error" in data:
@@ -57,11 +63,12 @@ def show_advanced_dashboard(components, ticker="SPY"):
         return
     
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📉 Model Backtesting",
         "🔮 Future Forecasting",
         "🚀 Short Squeeze Detector",
-        "📊 Sector Comparison"
+        "📊 Sector Comparison",
+        "🎯 Zero-FCF Valuation"
     ])
     
     with tab1:
@@ -75,6 +82,9 @@ def show_advanced_dashboard(components, ticker="SPY"):
     
     with tab4:
         show_sector_comparison_tab(data, components)
+    
+    with tab5:
+        show_zero_fcf_valuation_tab(data, components)
 
 
 @st.cache_data(ttl=300)
@@ -273,9 +283,14 @@ def backtest_pe_model(df, info):
         errors = actual_prices - predicted_prices
         mape = np.mean(np.abs(errors / actual_prices)) * 100
         
+        # Calculate hit rate (% of predictions within 5% of actual)
+        tolerance = 0.05
+        within_tolerance = np.abs(errors / actual_prices) <= tolerance
+        hit_rate = np.mean(within_tolerance) * 100
+        
         return {
             "mape": mape,
-            "hit_rate": 50,  # Placeholder
+            "hit_rate": hit_rate,
             "avg_error": np.mean(np.abs(errors))
         }
         
@@ -547,8 +562,18 @@ def calculate_squeeze_score(df, info):
         score = 0
         indicators = []
         
-        # Simulated short interest (would need real API)
-        short_interest = np.random.uniform(5, 25)  # Placeholder
+        # Get short interest from info (if available)
+        short_interest = info.get('shortPercentOfFloat', info.get('shortRatio', 0)) * 100
+        
+        # If not available, estimate from market cap (lower cap = potentially higher short interest)
+        if short_interest == 0:
+            market_cap = info.get('marketCap', 10_000_000_000)
+            if market_cap < 1_000_000_000:  # Small cap
+                short_interest = 15.0
+            elif market_cap < 10_000_000_000:  # Mid cap
+                short_interest = 8.0
+            else:  # Large cap
+                short_interest = 3.0
         
         if short_interest > 20:
             score += 40
@@ -624,7 +649,21 @@ def show_sector_comparison_tab(data, components):
     
     with col1:
         pe_ratio = info.get("trailingPE", 0)
-        sector_pe = 18.5  # Placeholder - would need sector data
+        # Estimate sector P/E based on sector type
+        sector_estimates = {
+            "Technology": 25.0,
+            "Healthcare": 22.0,
+            "Financial Services": 12.0,
+            "Consumer Cyclical": 18.0,
+            "Consumer Defensive": 16.0,
+            "Industrials": 15.0,
+            "Energy": 10.0,
+            "Utilities": 14.0,
+            "Real Estate": 20.0,
+            "Materials": 13.0,
+            "Communication Services": 19.0
+        }
+        sector_pe = sector_estimates.get(sector, 18.5)
         st.metric(
             "P/E Ratio",
             f"{pe_ratio:.1f}",
@@ -633,7 +672,21 @@ def show_sector_comparison_tab(data, components):
     
     with col2:
         profit_margin = info.get("profitMargins", 0) * 100
-        sector_margin = 12.5  # Placeholder
+        # Estimate sector margin based on sector type
+        margin_estimates = {
+            "Technology": 18.0,
+            "Healthcare": 15.0,
+            "Financial Services": 20.0,
+            "Consumer Cyclical": 8.0,
+            "Consumer Defensive": 10.0,
+            "Industrials": 9.0,
+            "Energy": 7.0,
+            "Utilities": 12.0,
+            "Real Estate": 25.0,
+            "Materials": 11.0,
+            "Communication Services": 13.0
+        }
+        sector_margin = margin_estimates.get(sector, 12.5)
         st.metric(
             "Profit Margin",
             f"{profit_margin:.1f}%",
@@ -642,7 +695,21 @@ def show_sector_comparison_tab(data, components):
     
     with col3:
         roe = info.get("returnOnEquity", 0) * 100
-        sector_roe = 15.0  # Placeholder
+        # Estimate sector ROE based on sector type
+        sector_roe_estimates = {
+            "Technology": 22.0,
+            "Healthcare": 18.0,
+            "Financial Services": 12.0,
+            "Consumer Cyclical": 14.0,
+            "Consumer Defensive": 16.0,
+            "Industrials": 13.0,
+            "Energy": 10.0,
+            "Utilities": 9.0,
+            "Real Estate": 8.0,
+            "Materials": 11.0,
+            "Communication Services": 15.0
+        }
+        sector_roe = sector_roe_estimates.get(sector, 15.0)
         st.metric(
             "ROE",
             f"{roe:.1f}%",
@@ -651,7 +718,21 @@ def show_sector_comparison_tab(data, components):
     
     with col4:
         debt_to_equity = info.get("debtToEquity", 0)
-        sector_de = 0.8  # Placeholder
+        # Estimate sector D/E based on sector type
+        de_estimates = {
+            "Technology": 0.5,
+            "Healthcare": 0.6,
+            "Financial Services": 2.5,  # Banks naturally have higher leverage
+            "Consumer Cyclical": 1.0,
+            "Consumer Defensive": 0.9,
+            "Industrials": 1.1,
+            "Energy": 0.9,
+            "Utilities": 1.3,  # Capital intensive
+            "Real Estate": 1.8,  # REITs use leverage
+            "Materials": 0.7,
+            "Communication Services": 1.0
+        }
+        sector_de = de_estimates.get(sector, 0.8)
         st.metric(
             "Debt/Equity",
             f"{debt_to_equity:.2f}",
@@ -670,3 +751,28 @@ def show_sector_comparison_tab(data, components):
             st.success(f"🟢 Undervalued vs sector by {abs(relative_pe):.1f}%")
         else:
             st.info(f"🟡 Fairly valued relative to sector ({relative_pe:+.1f}%)")
+
+
+def show_zero_fcf_valuation_tab(data, components):
+    """Show Zero-FCF valuation analysis"""
+    st.subheader("🎯 Zero-FCF Valuation Analysis")
+    st.markdown("*Alternative valuation methods for high-growth companies*")
+    
+    info = data.get("info", {})
+    financials = data.get("financials", {})
+    ticker = data.get("ticker", "")
+    
+    if not info:
+        st.warning("Insufficient data for valuation")
+        return
+    
+    # Calculate Zero-FCF valuation
+    from zero_fcf_valuation import ZeroFCFValuationEngine
+    
+    engine = ZeroFCFValuationEngine()
+    
+    with st.spinner("Calculating comprehensive valuation..."):
+        valuation_result = engine.calculate_comprehensive_valuation(info, financials)
+    
+    # Display results using the UI module
+    display_zero_fcf_tab(valuation_result, ticker)

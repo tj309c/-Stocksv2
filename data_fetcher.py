@@ -1,21 +1,29 @@
 """
 Data Fetcher Module - Using yfinance for all market data
 Only scrapes for sentiment/news
-Optimized for speed and reliability
+Optimized for speed and reliability with Fast/Deep mode support
 """
 import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 import requests
 from bs4 import BeautifulSoup
 import logging
 from pathlib import Path
 from utils import sanitize_dict_for_cache
 import streamlit as st
+from src.config.performance_config import (
+    get_adjusted_ttl,
+    get_historical_period,
+    should_fetch_options,
+    should_fetch_institutional,
+    APIUsageTracker
+)
 
 logger = logging.getLogger(__name__)
+api_tracker = APIUsageTracker()
 
 class MarketDataFetcher:
     """Fetches all market data using yfinance API"""
@@ -25,10 +33,22 @@ class MarketDataFetcher:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
     
     # ========== PRICE DATA ==========
-    @st.cache_data(ttl=300)  # 5 minutes
-    def get_stock_data(_self, ticker: str, period: str = "1y") -> Dict:
-        """Get comprehensive stock data from yfinance"""
+    def get_stock_data(self, ticker: str, period: str = None) -> Dict:
+        """Get comprehensive stock data from yfinance (mode-aware)"""
+        # Use mode-specific period if not provided
+        if period is None:
+            period = get_historical_period()
+        
+        # Use dynamic TTL based on performance mode
+        ttl = get_adjusted_ttl(300)  # Base 5 minutes
+        
+        return self._get_stock_data_cached(ticker, period, ttl)
+    
+    @st.cache_data(ttl=300)  # Base TTL, will be overridden
+    def _get_stock_data_cached(_self, ticker: str, period: str, ttl: int) -> Dict:
+        """Internal cached method"""
         try:
+            api_tracker.record_request("yfinance")
             stock = yf.Ticker(ticker)
             
             # Get all data in one go
@@ -49,10 +69,16 @@ class MarketDataFetcher:
             logger.error(f"Error fetching stock data for {ticker}: {e}")
             return {}
     
-    @st.cache_data(ttl=30)  # 30 seconds for real-time quotes
-    def get_realtime_quote(_self, ticker: str) -> Dict:
-        """Get real-time quote"""
+    def get_realtime_quote(self, ticker: str) -> Dict:
+        """Get real-time quote (mode-aware)"""
+        ttl = get_adjusted_ttl(30)  # Base 30 seconds
+        return self._get_realtime_quote_cached(ticker, ttl)
+    
+    @st.cache_data(ttl=30)
+    def _get_realtime_quote_cached(_self, ticker: str, ttl: int) -> Dict:
+        """Internal cached method"""
         try:
+            api_tracker.record_request("yfinance")
             stock = yf.Ticker(ticker)
             info = stock.info
             
@@ -79,10 +105,20 @@ class MarketDataFetcher:
             return {}
     
     # ========== OPTIONS DATA ==========
-    @st.cache_data(ttl=300)  # 5 minutes
-    def get_options_chain(_self, ticker: str) -> Dict:
-        """Get options chain with Greeks"""
+    def get_options_chain(self, ticker: str) -> Dict:
+        """Get options chain with Greeks (mode-aware, skipped in Fast Mode)"""
+        # Skip in Fast Mode per user request
+        if not should_fetch_options():
+            return {"skipped": True, "reason": "Fast Mode - Options chain disabled"}
+        
+        ttl = get_adjusted_ttl(300)  # Base 5 minutes
+        return self._get_options_chain_cached(ticker, ttl)
+    
+    @st.cache_data(ttl=300)
+    def _get_options_chain_cached(_self, ticker: str, ttl: int) -> Dict:
+        """Internal cached method"""
         try:
+            api_tracker.record_request("yfinance")
             stock = yf.Ticker(ticker)
             expirations = stock.options[:6]  # Get first 6 expirations
             
@@ -105,10 +141,16 @@ class MarketDataFetcher:
             return {}
     
     # ========== FUNDAMENTALS ==========
-    @st.cache_data(ttl=3600)  # 1 hour
-    def get_fundamentals(_self, ticker: str) -> Dict:
-        """Get fundamental data"""
+    def get_fundamentals(self, ticker: str) -> Dict:
+        """Get fundamental data (mode-aware)"""
+        ttl = get_adjusted_ttl(3600)  # Base 1 hour
+        return self._get_fundamentals_cached(ticker, ttl)
+    
+    @st.cache_data(ttl=3600)
+    def _get_fundamentals_cached(_self, ticker: str, ttl: int) -> Dict:
+        """Internal cached method"""
         try:
+            api_tracker.record_request("yfinance")
             stock = yf.Ticker(ticker)
             
             fundamentals = {
@@ -126,10 +168,20 @@ class MarketDataFetcher:
             return {}
     
     # ========== INSTITUTIONAL ==========
-    @st.cache_data(ttl=86400)  # 24 hours
-    def get_institutional_data(_self, ticker: str) -> Dict:
-        """Get institutional and insider data"""
+    def get_institutional_data(self, ticker: str) -> Dict:
+        """Get institutional and insider data (mode-aware, skipped in Fast Mode)"""
+        # Skip in Fast Mode per user request
+        if not should_fetch_institutional():
+            return {"skipped": True, "reason": "Fast Mode - Institutional data disabled"}
+        
+        ttl = get_adjusted_ttl(86400)  # Base 24 hours
+        return self._get_institutional_data_cached(ticker, ttl)
+    
+    @st.cache_data(ttl=86400)
+    def _get_institutional_data_cached(_self, ticker: str, ttl: int) -> Dict:
+        """Internal cached method"""
         try:
+            api_tracker.record_request("yfinance")
             stock = yf.Ticker(ticker)
             
             data = {
@@ -147,17 +199,29 @@ class MarketDataFetcher:
 
 
 class SentimentScraper:
-    """Scrapes sentiment data from web sources"""
+    """Scrapes sentiment data from web sources (mode-aware)"""
     
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
+        self.api_tracker = APIUsageTracker()
     
     def get_stocktwits_sentiment(self, ticker: str) -> Dict:
-        """Get StockTwits sentiment"""
+        """Get StockTwits sentiment (mode-aware)"""
+        from src.config.performance_config import should_fetch_sentiment, get_adjusted_ttl
+        
+        # In Fast Mode, return cached only
+        if not should_fetch_sentiment():
+            return {"skipped": True, "reason": "Fast Mode - Sentiment scraping disabled, use cached data"}
+        
         try:
+            # Check rate limit
+            if not self.api_tracker.check_limit("stocktwits"):
+                return {"error": "Rate limit reached for StockTwits API"}
+            
+            self.api_tracker.record_request("stocktwits")
             url = f"https://api.stocktwits.com/api/2/streams/symbol/{ticker}.json"
             response = self.session.get(url)
             
@@ -209,8 +273,15 @@ class SentimentScraper:
         }
     
     def get_news_sentiment(self, ticker: str) -> List[Dict]:
-        """Get news from yfinance"""
+        """Get news from yfinance (mode-aware)"""
+        from src.config.performance_config import should_fetch_sentiment
+        
+        # In Fast Mode, return empty (can use cached)
+        if not should_fetch_sentiment():
+            return []
+        
         try:
+            self.api_tracker.record_request("yfinance")
             stock = yf.Ticker(ticker)
             news = stock.news
             

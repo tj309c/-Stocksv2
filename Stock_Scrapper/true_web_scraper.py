@@ -71,7 +71,8 @@ class TrueStockScraper:
                 'polarity': round(polarity, 3),
                 'subjectivity': round(subjectivity, 3)
             }
-        except:
+        except Exception as e:
+            print(f"Sentiment analysis error: {e}")
             return {'sentiment': 'neutral', 'polarity': 0.0, 'subjectivity': 0.0}
     
     def scrape_reddit_old(self, limit: int = 100) -> List[Dict]:
@@ -131,7 +132,8 @@ class TrueStockScraper:
                             
                             try:
                                 score = int(score) if score.isdigit() else 0
-                            except:
+                            except (ValueError, TypeError) as e:
+                                print(f"Score parsing error: {e}")
                                 score = 0
                             
                             # Extract number of comments
@@ -150,7 +152,8 @@ class TrueStockScraper:
                                 try:
                                     date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
                                     date = date.replace(tzinfo=None)
-                                except:
+                                except (ValueError, TypeError, AttributeError) as e:
+                                    print(f"Reddit date parsing error: {e}")
                                     date = datetime.now()
                             else:
                                 date = datetime.now()
@@ -280,7 +283,8 @@ class TrueStockScraper:
                 date = datetime.strptime(date_text, '%b-%d-%y %I:%M%p')
             
             return date
-        except:
+        except (ValueError, TypeError, AttributeError) as e:
+            print(f"StockTwits date parsing error: {e}")
             return datetime.now()
     
     def scrape_yahoo_finance(self) -> List[Dict]:
@@ -324,7 +328,8 @@ class TrueStockScraper:
                                 date_str = pubdate_elem.get_text(strip=True)
                                 date = datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
                                 date = date.replace(tzinfo=None)
-                            except:
+                            except (ValueError, TypeError, AttributeError) as e:
+                                print(f"Yahoo Finance date parsing error: {e}")
                                 date = datetime.now()
                         else:
                             date = datetime.now()
@@ -444,7 +449,8 @@ class TrueStockScraper:
                 return now - timedelta(weeks=weeks)
             else:
                 return now
-        except:
+        except (ValueError, TypeError, AttributeError) as e:
+            print(f"Relative date parsing error: {e}")
             return datetime.now()
     
     def scrape_seeking_alpha(self) -> List[Dict]:
@@ -491,7 +497,8 @@ class TrueStockScraper:
                             try:
                                 date = datetime.fromisoformat(time_elem.get('datetime').replace('Z', '+00:00'))
                                 date = date.replace(tzinfo=None)
-                            except:
+                            except (ValueError, TypeError, AttributeError) as e:
+                                print(f"Seeking Alpha date parsing error: {e}")
                                 date = datetime.now()
                         else:
                             date = datetime.now()

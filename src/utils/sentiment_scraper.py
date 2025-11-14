@@ -9,6 +9,9 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Add Stock_Scrapper to path
 STOCK_SCRAPPER_PATH = Path(__file__).parent.parent.parent / "Stock_Scrapper"
@@ -216,8 +219,9 @@ def get_scraper(config: Optional[Dict] = None) -> SentimentScraper:
                     'reddit_user_agent': st.secrets.get('REDDIT_USER_AGENT', 'StocksV2App/1.0'),
                     'news_api_key': st.secrets.get('NEWS_API_KEY')
                 }
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Could not load secrets for sentiment scraper: {e}")
+            config = {}  # Fallback to empty config
     
     return SentimentScraper(config)
 

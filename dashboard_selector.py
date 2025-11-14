@@ -346,7 +346,8 @@ def show_rocket_animation():
         <div class="loading-text">""" + loading_msg + """</div>
     </div>
     """, unsafe_allow_html=True)
-    time.sleep(0.8)
+    # Removed artificial delay for better UX
+    # time.sleep(0.8)
 
 
 def show_dashboard_switcher():

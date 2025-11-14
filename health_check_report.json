@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-14T13:16:47.920412",
+  "timestamp": "2025-11-14T13:19:13.894987",
   "syntax_checks": [],
   "import_checks": [
     {
@@ -274,7 +274,7 @@
     {
       "test": "Monte Carlo simulation",
       "status": "PASS",
-      "details": "100 simulations, mean: $213.96"
+      "details": "100 simulations, mean: $197.58"
     },
     {
       "test": "Sensitivity analysis",

@@ -349,21 +349,42 @@ def show_monte_carlo_simulation(calc, base_cash_flow, current_price, cash, debt,
     projection_years = st.slider("Projection Years", 3, 10, 5, 1, key="mc_years")
     
     if st.button("🚀 Run Monte Carlo Simulation", type="primary", key="run_mc"):
-        with st.spinner(f"Running {num_simulations} simulations..."):
-            mc_result = _run_monte_carlo_cached(
-                base_cash_flow=base_cash_flow,
-                growth_mean=growth_mean,
-                growth_std=growth_std,
-                wacc_mean=wacc_mean,
-                wacc_std=wacc_std,
-                terminal_mean=terminal_mean,
-                terminal_std=terminal_std,
-                projection_years=int(projection_years),
-                cash=cash,
-                debt=debt,
-                shares_outstanding=shares_outstanding,
-                num_simulations=int(num_simulations)
-            )
+        # Create progress indicators
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        status_text.text(f"🎲 Initializing {num_simulations:,} simulations...")
+        progress_bar.progress(10)
+        
+        status_text.text(f"🔢 Running calculations... This may take {num_simulations//100} seconds")
+        progress_bar.progress(30)
+        
+        mc_result = _run_monte_carlo_cached(
+            base_cash_flow=base_cash_flow,
+            growth_mean=growth_mean,
+            growth_std=growth_std,
+            wacc_mean=wacc_mean,
+            wacc_std=wacc_std,
+            terminal_mean=terminal_mean,
+            terminal_std=terminal_std,
+            projection_years=int(projection_years),
+            cash=cash,
+            debt=debt,
+            shares_outstanding=shares_outstanding,
+            num_simulations=int(num_simulations)
+        )
+        
+        progress_bar.progress(90)
+        status_text.text("📊 Processing results...")
+        
+        progress_bar.progress(100)
+        status_text.text("✅ Simulation complete!")
+        
+        # Clean up progress indicators after a moment
+        import time
+        time.sleep(0.5)
+        progress_bar.empty()
+        status_text.empty()
         
         if "error" in mc_result:
             st.error(f"❌ Simulation Error: {mc_result['error']}")

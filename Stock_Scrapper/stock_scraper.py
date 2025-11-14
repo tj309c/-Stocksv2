@@ -164,7 +164,8 @@ class StockDataScraper:
                     published_at = article.get('publishedAt', '')
                     try:
                         date = datetime.strptime(published_at, '%Y-%m-%dT%H:%M:%SZ')
-                    except:
+                    except (ValueError, TypeError) as e:
+                        print(f"NewsAPI date parsing error: {e}")
                         date = datetime.now()
                     
                     title = article.get('title', '')
@@ -254,7 +255,8 @@ class StockDataScraper:
                             date_str = pubdate_elem.text if pubdate_elem is not None else ''
                             date = datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
                             date = date.replace(tzinfo=None)
-                        except:
+                        except (ValueError, TypeError, AttributeError) as e:
+                            print(f"RSS feed date parsing error: {e}")
                             date = datetime.now()
                         
                         # Only include items from past month

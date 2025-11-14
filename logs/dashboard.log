@@ -18,3 +18,30 @@
 2025-11-14 07:29:57,180 - src.config.settings - INFO - Application started in production mode
 2025-11-14 07:29:59,726 - src.config.settings - INFO - Application started in production mode
 2025-11-14 07:31:12,812 - src.config.settings - INFO - Application started in production mode
+2025-11-14 13:48:13,658 - src.config.settings - INFO - Application started in production mode
+2025-11-14 13:48:53,939 - src.config.settings - INFO - Application started in production mode
+2025-11-14 14:59:54,245 - data_fetcher - ERROR - Error fetching StockTwits sentiment: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2025-11-14 14:59:55,195 - src.config.settings - INFO - Application started in production mode
+2025-11-14 15:00:03,703 - src.pipelines.get_political_data - INFO - Finnhub API initialized successfully
+2025-11-14 15:00:04,075 - src.pipelines.get_political_data - WARNING - Senate Stock Tracker API unavailable: 403 Client Error: Forbidden for url: https://senate-stock-watcher-data.s3-us-west-2.amazonaws.com/aggregate/all_transactions.json
+2025-11-14 15:00:04,225 - src.pipelines.get_political_data - INFO - Fetched 9 Congressional trades from QuiverQuant API
+2025-11-14 15:00:04,233 - src.utils.congressional_display - ERROR - Error in show_congressional_trades: Duplicate column names found: ['Congress Member', 'BioGuideID', 'Disclosed', 'TransactionDate', 'ticker', 'Amount', 'House', 'Amount', 'Party', 'last_modified', 'TickerType', 'Description', 'ExcessReturn', 'PriceChange', 'SPYChange', 'Chamber', 'estimated_value', 'Type']
+Traceback (most recent call last):
+  File "/workspaces/-Stocksv2/src/utils/congressional_display.py", line 135, in show_congressional_trades
+    st.dataframe(
+  File "/home/codespace/.local/lib/python3.12/site-packages/streamlit/runtime/metrics_util.py", line 447, in wrapped_func
+    result = non_optional_func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codespace/.local/lib/python3.12/site-packages/streamlit/elements/arrow.py", line 722, in dataframe
+    proto.data = dataframe_util.convert_pandas_df_to_arrow_bytes(data_df)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codespace/.local/lib/python3.12/site-packages/streamlit/dataframe_util.py", line 829, in convert_pandas_df_to_arrow_bytes
+    table = pa.Table.from_pandas(df)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pyarrow/table.pxi", line 4795, in pyarrow.lib.Table.from_pandas
+  File "/home/codespace/.local/lib/python3.12/site-packages/pyarrow/pandas_compat.py", line 594, in dataframe_to_arrays
+    convert_fields) = _get_columns_to_convert(df, schema, preserve_index,
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codespace/.local/lib/python3.12/site-packages/pyarrow/pandas_compat.py", line 374, in _get_columns_to_convert
+    raise ValueError(
+ValueError: Duplicate column names found: ['Congress Member', 'BioGuideID', 'Disclosed', 'TransactionDate', 'ticker', 'Amount', 'House', 'Amount', 'Party', 'last_modified', 'TickerType', 'Description', 'ExcessReturn', 'PriceChange', 'SPYChange', 'Chamber', 'estimated_value', 'Type']

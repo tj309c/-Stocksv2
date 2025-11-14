@@ -1,0 +1,330 @@
+{
+  "timestamp": "2025-11-14T13:26:00.798722",
+  "tests_run": 26,
+  "passed": 17,
+  "failed": 1,
+  "warnings": 8,
+  "usability_issues": [
+    {
+      "type": "usability",
+      "title": "Empty Ticker Not Handled Gracefully",
+      "description": "When user clears ticker input, app should show friendly message",
+      "severity": "low",
+      "suggested_fix": "Add validation: if not ticker or not ticker.strip(): show helpful message"
+    },
+    {
+      "type": "usability",
+      "title": "DCF Shows Negative/Zero Fair Value",
+      "description": "Users may be confused by $0 fair value - needs better error message",
+      "severity": "medium",
+      "suggested_fix": "Show clear message: 'Cannot calculate DCF - insufficient financial data'"
+    },
+    {
+      "type": "usability",
+      "title": "Missing Key Technical Indicators",
+      "description": "Expected indicators not found: ['bollinger_bands', 'sma_50', 'sma_200']",
+      "severity": "medium",
+      "suggested_fix": "Ensure all standard indicators are calculated"
+    },
+    {
+      "type": "usability",
+      "title": "Tab Names Not User-Friendly",
+      "description": "Tab names use technical jargon - 'DD' (Due Diligence) may not be clear to beginners",
+      "severity": "low",
+      "suggested_fix": "Consider renaming to 'Valuation Analysis' or add tooltips explaining 'DD'"
+    },
+    {
+      "type": "usability",
+      "title": "No Loading Indicators for Slow Operations",
+      "description": "Monte Carlo with 10,000 simulations has no progress bar",
+      "severity": "medium",
+      "suggested_fix": "Add st.progress() for long-running calculations"
+    },
+    {
+      "type": "usability",
+      "title": "Error Messages Not User-Friendly",
+      "description": "Technical error messages (e.g., 'KeyError: history') shown to users",
+      "severity": "medium",
+      "suggested_fix": "Wrap technical errors in friendly messages: 'Unable to load data. Please try again.'"
+    },
+    {
+      "type": "usability",
+      "title": "Not Mobile Optimized",
+      "description": "Streamlit's wide layout doesn't work well on mobile - charts overflow",
+      "severity": "medium",
+      "suggested_fix": "Test on mobile devices, consider responsive chart sizing"
+    }
+  ],
+  "bugs": [
+    {
+      "type": "bug",
+      "title": "Invalid Ticker Not Detected",
+      "description": "Ticker 'INVALID123' should be rejected but wasn't",
+      "severity": "medium",
+      "suggested_fix": "Add ticker format validation before API call"
+    },
+    {
+      "type": "bug",
+      "title": "No Handling for After-Hours Trading",
+      "description": "App doesn't distinguish between market hours and after-hours prices",
+      "severity": "low",
+      "suggested_fix": "Add market status indicator (Open/Closed/Pre-market/After-hours)"
+    },
+    {
+      "type": "bug",
+      "title": "Stale Data Not Detected",
+      "description": "If API fails, cached data shown without warning",
+      "severity": "medium",
+      "suggested_fix": "Check data freshness, show warning if >1 hour old"
+    }
+  ],
+  "enhancements": [
+    {
+      "type": "enhancement",
+      "title": "Add Keyboard Shortcuts",
+      "description": "Power users would benefit from keyboard navigation (e.g., 1-6 for tab switching)",
+      "severity": "Consider adding: st.markdown with custom JS for keyboard shortcuts",
+      "suggested_fix": ""
+    },
+    {
+      "type": "enhancement",
+      "title": "Add 'Favorites' or 'Watchlist' Feature",
+      "description": "Users have to re-type tickers frequently - watchlist would improve workflow",
+      "severity": "Add session state watchlist with quick-select dropdown",
+      "suggested_fix": ""
+    },
+    {
+      "type": "enhancement",
+      "title": "Add Data Freshness Indicator",
+      "description": "Users don't know when data was last updated - show timestamp",
+      "severity": "Display 'Last updated: X minutes ago' with cache TTL info",
+      "suggested_fix": ""
+    },
+    {
+      "type": "enhancement",
+      "title": "Export Feature Missing",
+      "description": "Users cannot export charts, valuations, or reports",
+      "severity": "Add 'Export to CSV/PDF' buttons for key analyses",
+      "suggested_fix": ""
+    },
+    {
+      "type": "performance",
+      "title": "No Lazy Loading for Large Datasets",
+      "description": "All data loaded at once - should paginate or lazy load",
+      "severity": "medium",
+      "suggested_fix": "Implement pagination for large tables (>100 rows)"
+    },
+    {
+      "type": "performance",
+      "title": "Heavy Calculations Block UI",
+      "description": "Monte Carlo with 10K simulations freezes the app",
+      "severity": "high",
+      "suggested_fix": "Move heavy calculations to background threads or add async processing"
+    },
+    {
+      "type": "accessibility",
+      "title": "No Alt Text for Charts",
+      "description": "Screen readers cannot describe plotly charts",
+      "severity": "low",
+      "suggested_fix": "Add descriptive labels and aria-labels to all charts"
+    },
+    {
+      "type": "accessibility",
+      "title": "Insufficient Color Contrast",
+      "description": "Some text may not meet WCAG 2.1 AA standards",
+      "severity": "medium",
+      "suggested_fix": "Audit color palette for 4.5:1 contrast ratio"
+    },
+    {
+      "type": "accessibility",
+      "title": "No Keyboard Navigation Support",
+      "description": "Tab navigation doesn't work consistently across all widgets",
+      "severity": "low",
+      "suggested_fix": "Ensure all interactive elements are keyboard accessible"
+    }
+  ],
+  "details": [
+    {
+      "category": "imports",
+      "test": "Streamlit",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "category": "imports",
+      "test": "Data Fetcher & Sentiment",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "category": "imports",
+      "test": "Analysis Engines",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "category": "imports",
+      "test": "Enhanced Valuation Module",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "category": "imports",
+      "test": "Utility Functions",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "category": "data_fetch",
+      "test": "Stock data for 'AAPL'",
+      "status": "PASS",
+      "details": "Fetched 7 data points",
+      "severity": "info"
+    },
+    {
+      "category": "data_fetch",
+      "test": "Stock data for 'TSLA'",
+      "status": "PASS",
+      "details": "Fetched 7 data points",
+      "severity": "info"
+    },
+    {
+      "category": "data_fetch",
+      "test": "Stock data for 'GME'",
+      "status": "PASS",
+      "details": "Fetched 7 data points",
+      "severity": "info"
+    },
+    {
+      "category": "data_fetch",
+      "test": "Invalid ticker 'INVALID123' validation",
+      "status": "FAIL",
+      "details": "Should return error for invalid ticker",
+      "severity": "info"
+    },
+    {
+      "category": "data_fetch",
+      "test": "Empty ticker handling",
+      "status": "WARN",
+      "details": "Should show user-friendly error",
+      "severity": "info"
+    },
+    {
+      "category": "data_fetch",
+      "test": "Crypto data for 'BTC-USD'",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "category": "data_fetch",
+      "test": "Crypto data for 'ETH-USD'",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "category": "data_fetch",
+      "test": "Crypto data for 'DOGE-USD'",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "category": "data_fetch",
+      "test": "Crypto data for 'INVALID-USD'",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "category": "valuation",
+      "test": "DCF Calculation",
+      "status": "PASS",
+      "details": "Fair value: $0.00",
+      "severity": "info"
+    },
+    {
+      "category": "valuation",
+      "test": "Enhanced DCF Calculation",
+      "status": "PASS",
+      "details": "Fair value: $21.67",
+      "severity": "info"
+    },
+    {
+      "category": "valuation",
+      "test": "Monte Carlo Simulation",
+      "status": "PASS",
+      "details": "Mean: $24.57",
+      "severity": "info"
+    },
+    {
+      "category": "technical",
+      "test": "Technical Analysis",
+      "status": "PASS",
+      "details": "Analyzed 9 indicators",
+      "severity": "info"
+    },
+    {
+      "category": "ui_check",
+      "test": "Stock Dashboard Tab Structure",
+      "status": "MANUAL_CHECK",
+      "details": "Verify 6 tabs: Overview, Valuation (DD), Interactive DCF, Technical, Sentiment, Smart Money",
+      "severity": "info"
+    },
+    {
+      "category": "performance",
+      "test": "Stock data caching",
+      "status": "PASS",
+      "details": "fetch_stock_data is cached",
+      "severity": "info"
+    },
+    {
+      "category": "edge_cases",
+      "test": "Newly IPO'd stock with <1 year data",
+      "status": "MANUAL_CHECK",
+      "details": "Valuation models may fail",
+      "severity": "info"
+    },
+    {
+      "category": "edge_cases",
+      "test": "Penny stock with erratic data",
+      "status": "MANUAL_CHECK",
+      "details": "Technical indicators may give false signals",
+      "severity": "info"
+    },
+    {
+      "category": "edge_cases",
+      "test": "Stock with no options chain",
+      "status": "MANUAL_CHECK",
+      "details": "Options dashboard should show friendly message",
+      "severity": "info"
+    },
+    {
+      "category": "edge_cases",
+      "test": "Delisted stock",
+      "status": "MANUAL_CHECK",
+      "details": "Should show 'No longer trading' message",
+      "severity": "info"
+    },
+    {
+      "category": "edge_cases",
+      "test": "After-hours price update",
+      "status": "MANUAL_CHECK",
+      "details": "Should show market status (open/closed)",
+      "severity": "info"
+    },
+    {
+      "category": "edge_cases",
+      "test": "Weekend/holiday",
+      "status": "MANUAL_CHECK",
+      "details": "Should handle no real-time data gracefully",
+      "severity": "info"
+    }
+  ]
+}

@@ -8,10 +8,9 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from datetime import datetime, timedelta
 from scipy.optimize import minimize
 from utils import (format_currency, format_percentage, format_large_number,
-                   format_price, get_color_for_value, safe_divide)
+                   safe_divide)
 
 
 def show_portfolio_dashboard(components):
@@ -129,9 +128,22 @@ def fetch_portfolio_data(_components, tickers):
         min_length = min([len(data["history"]) for data in portfolio.values()])
         
         for ticker, data in portfolio.items():
-            history = data["history"].iloc[-min_length:]
-            returns = history['Close'].pct_change().dropna()
-            returns_data[ticker] = returns.values
+            # Convert dict back to DataFrame if needed (from caching)
+            history = data["history"]
+            if isinstance(history, dict):
+                history = pd.DataFrame(history)
+            
+            # Align data length
+            history = history.iloc[-min_length:]
+            
+            # Calculate returns
+            if 'Close' in history.columns:
+                returns = history['Close'].pct_change().dropna()
+                returns_data[ticker] = returns.values
+            else:
+                # Handle case where Close might be index
+                returns = pd.Series(history.get('Close', {})).pct_change().dropna()
+                returns_data[ticker] = returns.values
         
         returns_df = pd.DataFrame(returns_data)
         
@@ -186,11 +198,24 @@ def show_optimal_allocation_tab(portfolio_data, investment, risk_tolerance):
             # Create allocation table
             allocation_data = []
             for ticker, weight in zip(tickers, weights):
+                # Get latest price safely
+                history = portfolio_data["portfolio"][ticker]["history"]
+                if isinstance(history, dict):
+                    # Handle dict from caching
+                    close_prices = history.get('Close', {})
+                    if isinstance(close_prices, dict):
+                        latest_price = list(close_prices.values())[-1] if close_prices else 100
+                    else:
+                        latest_price = close_prices
+                else:
+                    # Handle DataFrame
+                    latest_price = history['Close'].iloc[-1]
+                
                 allocation_data.append({
                     "Ticker": ticker,
                     "Weight": f"{weight*100:.1f}%",
                     "Amount": format_currency(investment * weight),
-                    "Shares": int(investment * weight / portfolio_data["portfolio"][ticker]["history"]["Close"].iloc[-1])
+                    "Shares": int(investment * weight / latest_price) if latest_price > 0 else 0
                 })
             
             st.dataframe(allocation_data, use_container_width=True)

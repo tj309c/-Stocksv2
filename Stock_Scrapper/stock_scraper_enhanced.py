@@ -269,7 +269,8 @@ class EnhancedStockDataScraper:
                         published_at = article.get('publishedAt', '')
                         try:
                             date = datetime.strptime(published_at, '%Y-%m-%dT%H:%M:%SZ')
-                        except:
+                        except (ValueError, TypeError) as e:
+                            print(f"Date parsing error for NewsAPI: {e}")
                             date = datetime.now()
                         
                         title = article.get('title', '')
@@ -339,7 +340,8 @@ class EnhancedStockDataScraper:
                             date_str = pubdate_elem.text if pubdate_elem is not None else ''
                             date = datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
                             date = date.replace(tzinfo=None)
-                        except:
+                        except (ValueError, TypeError, AttributeError) as e:
+                            print(f"Date parsing error for RSS feed: {e}")
                             date = datetime.now()
                         
                         if date > datetime.now() - timedelta(days=30):
