@@ -119,33 +119,6 @@ def sanitize_dict_for_cache(data: Dict) -> Dict:
     return sanitized
 
 
-def convert_df_timestamps(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Convert DataFrame with Timestamp index to string index
-    
-    Args:
-        df: DataFrame with potential Timestamp index
-    
-    Returns:
-        DataFrame with string index
-    """
-    if df.empty:
-        return df
-    
-    df_copy = df.copy()
-    
-    # Convert index if it's DatetimeIndex
-    if isinstance(df_copy.index, pd.DatetimeIndex):
-        df_copy.index = df_copy.index.astype(str)
-    
-    # Convert any Timestamp columns
-    for col in df_copy.columns:
-        if pd.api.types.is_datetime64_any_dtype(df_copy[col]):
-            df_copy[col] = df_copy[col].astype(str)
-    
-    return df_copy
-
-
 # ==================== SAFE DATA EXTRACTION ====================
 
 def safe_get(dictionary: Dict, key: str, default: Any = None) -> Any:
@@ -223,65 +196,6 @@ def is_valid_number(value: Any) -> bool:
 
 # ==================== TIME FORMATTING ====================
 
-def format_datetime(dt: Union[datetime, pd.Timestamp, str, None]) -> str:
-    """
-    Format datetime consistently
-    
-    Args:
-        dt: Datetime object or string
-    
-    Returns:
-        Formatted datetime string
-    """
-    if dt is None:
-        return "N/A"
-    
-    try:
-        if isinstance(dt, str):
-            dt = pd.to_datetime(dt)
-        
-        if isinstance(dt, (datetime, pd.Timestamp)):
-            return dt.strftime("%Y-%m-%d %H:%M:%S")
-        
-        return str(dt)
-    except:
-        return str(dt)
-
-
-def time_ago(dt: Union[datetime, pd.Timestamp, str]) -> str:
-    """
-    Get human-readable time difference
-    
-    Args:
-        dt: Past datetime
-    
-    Returns:
-        String like "5 minutes ago"
-    """
-    try:
-        if isinstance(dt, str):
-            dt = pd.to_datetime(dt)
-        
-        now = datetime.now()
-        if isinstance(dt, pd.Timestamp):
-            dt = dt.to_pydatetime()
-        
-        diff = now - dt
-        
-        seconds = diff.total_seconds()
-        
-        if seconds < 60:
-            return f"{int(seconds)}s ago"
-        elif seconds < 3600:
-            return f"{int(seconds/60)}m ago"
-        elif seconds < 86400:
-            return f"{int(seconds/3600)}h ago"
-        else:
-            return f"{int(seconds/86400)}d ago"
-    except:
-        return "N/A"
-
-
 # ==================== COLOR HELPERS ====================
 
 def get_color_for_value(value: float, positive_color: str = "#00FF88", 
@@ -332,60 +246,7 @@ def get_confidence_color(score: float) -> str:
 
 # ==================== TEXT FORMATTING ====================
 
-def truncate_text(text: str, max_length: int = 100, suffix: str = "...") -> str:
-    """
-    Truncate text to max length
-    
-    Args:
-        text: Text to truncate
-        max_length: Maximum length
-        suffix: What to append if truncated
-    
-    Returns:
-        Truncated text
-    """
-    if not text or len(text) <= max_length:
-        return text
-    
-    return text[:max_length - len(suffix)] + suffix
-
-
-def title_case(text: str) -> str:
-    """Convert text to title case"""
-    if not text:
-        return ""
-    return text.replace("_", " ").title()
-
-
 # ==================== DATAFRAME HELPERS ====================
-
-def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Clean DataFrame for display
-    - Remove NaN
-    - Format numbers
-    - Convert timestamps
-    
-    Args:
-        df: DataFrame to clean
-    
-    Returns:
-        Cleaned DataFrame
-    """
-    if df.empty:
-        return df
-    
-    df_clean = df.copy()
-    
-    # Convert timestamps in index
-    if isinstance(df_clean.index, pd.DatetimeIndex):
-        df_clean.index = df_clean.index.strftime("%Y-%m-%d")
-    
-    # Replace NaN with dash
-    df_clean = df_clean.fillna("-")
-    
-    return df_clean
-
 
 # ==================== ERROR HANDLING ====================
 
@@ -394,38 +255,4 @@ class DashboardError(Exception):
     pass
 
 
-def handle_error(error: Exception, context: str = "") -> str:
-    """
-    Format error message for display
-    
-    Args:
-        error: Exception object
-        context: Context where error occurred
-    
-    Returns:
-        Formatted error message
-    """
-    error_type = type(error).__name__
-    error_msg = str(error)
-    
-    if context:
-        return f"❌ Error in {context}: {error_type} - {error_msg}"
-    else:
-        return f"❌ {error_type}: {error_msg}"
-
-
 # ==================== PERFORMANCE HELPERS ====================
-
-def batch_process(items: list, batch_size: int = 100):
-    """
-    Yield batches of items for processing
-    
-    Args:
-        items: List to batch
-        batch_size: Size of each batch
-    
-    Yields:
-        Batches of items
-    """
-    for i in range(0, len(items), batch_size):
-        yield items[i:i + batch_size]
