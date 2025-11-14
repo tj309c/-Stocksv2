@@ -498,22 +498,56 @@ def show_technical_tab(data, components):
 
 
 def show_sentiment_tab(data, components):
-    """Show sentiment analysis"""
+    """Show sentiment analysis using real scraper data"""
+    from src.utils.sentiment_scraper import get_scraper, display_sentiment_metrics, display_recent_posts
+    from src.config.settings import Config
+    
     st.subheader("💬 Ape Sentiment Tracker")
     
-    col1, col2 = st.columns(2)
+    # Get configuration for API keys
+    config_obj = Config()
+    api_config = {
+        'reddit_client_id': config_obj.get('api.reddit.client_id', ''),
+        'reddit_client_secret': config_obj.get('api.reddit.client_secret', ''),
+        'reddit_user_agent': config_obj.get('api.reddit.user_agent', 'StocksV2App/1.0'),
+        'news_api_key': config_obj.get('api.news.api_key', '')
+    }
     
-    with col1:
-        st.markdown("### 🦍 StockTwits Vibes")
+    # Initialize scraper
+    scraper = get_scraper(api_config)
+    
+    # Add refresh button
+    col_refresh, col_info = st.columns([1, 3])
+    with col_refresh:
+        if st.button("🔄 Refresh Data", key="refresh_sentiment"):
+            scraper.get_sentiment_data.clear()
+            st.rerun()
+    
+    with col_info:
+        st.caption("Real-time sentiment from Reddit (wallstreetbets, stocks, investing) and news sources")
+    
+    # Get sentiment data
+    ticker = data["ticker"]
+    with st.spinner(f"Scraping sentiment data for ${ticker}..."):
+        summary = scraper.get_sentiment_summary(ticker)
+    
+    if summary['data_available']:
+        # Display metrics
+        display_sentiment_metrics(summary)
         
-        sentiment = data["sentiment"]["stocktwits"]
+        st.divider()
         
-        if "error" not in sentiment:
-            # Sentiment pie
+        # Create two columns for visualizations
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 📊 Sentiment Breakdown")
+            
+            # Sentiment pie chart
             sentiment_data = {
-                "🚀 Bullish": sentiment.get("bullish", 0),
-                "📉 Bearish": sentiment.get("bearish", 0),
-                "🤷 Neutral": sentiment.get("neutral", 0)
+                "🟢 Positive": summary['positive_pct'],
+                "🔴 Negative": summary['negative_pct'],
+                "⚪ Neutral": summary['neutral_pct']
             }
             
             fig = go.Figure(data=[go.Pie(
@@ -524,37 +558,163 @@ def show_sentiment_tab(data, components):
             )])
             
             fig.update_layout(
-                title="Community Sentiment",
+                title=f"Sentiment Distribution ({summary['total_mentions']} mentions)",
                 template="plotly_dark",
-                height=300
+                height=350
             )
             
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
             
-            score = sentiment.get('sentiment_score', 0)
-            if score > 30:
-                st.success(f"**Score: {score:,.1f}** - Apes are BULLISH! 🦍🚀")
-            elif score > 0:
-                st.info(f"**Score: {score:,.1f}** - Slightly bullish 📈")
-            elif score > -30:
-                st.warning(f"**Score: {score:,.1f}** - Slightly bearish 📉")
+            # Sentiment score interpretation
+            avg_polarity = summary['avg_polarity']
+            if avg_polarity > 0.3:
+                st.success(f"**Polarity: {avg_polarity:.2f}** - Apes are BULLISH! 🦍🚀")
+            elif avg_polarity > 0:
+                st.info(f"**Polarity: {avg_polarity:.2f}** - Slightly bullish 📈")
+            elif avg_polarity > -0.3:
+                st.warning(f"**Polarity: {avg_polarity:.2f}** - Slightly bearish 📉")
             else:
-                st.error(f"**Score: {score:,.1f}** - Bears winning 🐻")
-        else:
-            st.info("No sentiment data available")
-    
-    with col2:
-        st.markdown("### 📰 Latest News")
+                st.error(f"**Polarity: {avg_polarity:.2f}** - Bears winning 🐻")
         
-        news = data["sentiment"]["news"]
-        if news:
-            for article in news[:5]:
-                with st.expander(f"📰 {article['title'][:60]}..."):
-                    st.markdown(f"**Publisher:** {article['publisher']}")
-                    st.markdown(f"**Time:** {article['timestamp']}")
-                    st.markdown(f"[Read More]({article['link']})")
-        else:
-            st.info("No recent news")
+        with col2:
+            st.markdown("### 📈 Trending Sources")
+            
+            # Source distribution bar chart
+            sources = summary['trending_sources']
+            if sources:
+                fig_sources = go.Figure(data=[go.Bar(
+                    x=list(sources.values()),
+                    y=list(sources.keys()),
+                    orientation='h',
+                    marker_color='#00D9FF'
+                )])
+                
+                fig_sources.update_layout(
+                    title="Mentions by Source",
+                    template="plotly_dark",
+                    height=350,
+                    xaxis_title="Number of Mentions",
+                    yaxis_title="Source"
+                )
+                
+                st.plotly_chart(fig_sources, use_container_width=True)
+            else:
+                st.info("No source data available")
+            
+            # Subjectivity meter
+            subjectivity = summary['avg_subjectivity']
+            st.metric(
+                "Avg Subjectivity",
+                f"{subjectivity:.2f}",
+                help="0 = Objective, 1 = Highly Subjective/Opinionated"
+            )
+        
+        st.divider()
+        
+        # Display recent posts
+        st.markdown("### 🔥 Recent Social Activity")
+        display_recent_posts(summary['recent_posts'], max_posts=10)
+        
+        # Sentiment over time (if we have enough data)
+        sentiment_over_time = scraper.get_sentiment_over_time(ticker, days=7)
+        if not sentiment_over_time.empty:
+            st.markdown("### 📅 Sentiment Trend (Last 7 Days)")
+            
+            fig_trend = go.Figure()
+            
+            if 'positive' in sentiment_over_time.columns:
+                fig_trend.add_trace(go.Scatter(
+                    x=sentiment_over_time['date_only'],
+                    y=sentiment_over_time['positive'],
+                    mode='lines+markers',
+                    name='Positive',
+                    line=dict(color='#00FF88', width=2)
+                ))
+            
+            if 'negative' in sentiment_over_time.columns:
+                fig_trend.add_trace(go.Scatter(
+                    x=sentiment_over_time['date_only'],
+                    y=sentiment_over_time['negative'],
+                    mode='lines+markers',
+                    name='Negative',
+                    line=dict(color='#FF3860', width=2)
+                ))
+            
+            if 'neutral' in sentiment_over_time.columns:
+                fig_trend.add_trace(go.Scatter(
+                    x=sentiment_over_time['date_only'],
+                    y=sentiment_over_time['neutral'],
+                    mode='lines+markers',
+                    name='Neutral',
+                    line=dict(color='#FFB700', width=2)
+                ))
+            
+            fig_trend.update_layout(
+                title="Daily Sentiment Mentions",
+                template="plotly_dark",
+                height=400,
+                xaxis_title="Date",
+                yaxis_title="Number of Mentions",
+                hovermode='x unified'
+            )
+            
+            st.plotly_chart(fig_trend, use_container_width=True)
+    
+    else:
+        # Fallback to old sentiment display if no scraper data
+        st.warning("⚠️ Real-time sentiment scraping unavailable. Configure API keys for live data.")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 🦍 StockTwits Vibes")
+            sentiment = data["sentiment"]["stocktwits"]
+            
+            if "error" not in sentiment:
+                sentiment_data = {
+                    "🚀 Bullish": sentiment.get("bullish", 0),
+                    "📉 Bearish": sentiment.get("bearish", 0),
+                    "🤷 Neutral": sentiment.get("neutral", 0)
+                }
+                
+                fig = go.Figure(data=[go.Pie(
+                    labels=list(sentiment_data.keys()),
+                    values=list(sentiment_data.values()),
+                    hole=.3,
+                    marker_colors=["#00FF88", "#FF3860", "#FFB700"]
+                )])
+                
+                fig.update_layout(
+                    title="Community Sentiment",
+                    template="plotly_dark",
+                    height=300
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                score = sentiment.get('sentiment_score', 0)
+                if score > 30:
+                    st.success(f"**Score: {score:,.1f}** - Apes are BULLISH! 🦍🚀")
+                elif score > 0:
+                    st.info(f"**Score: {score:,.1f}** - Slightly bullish 📈")
+                elif score > -30:
+                    st.warning(f"**Score: {score:,.1f}** - Slightly bearish 📉")
+                else:
+                    st.error(f"**Score: {score:,.1f}** - Bears winning 🐻")
+            else:
+                st.info("No sentiment data available")
+        
+        with col2:
+            st.markdown("### 📰 Latest News")
+            news = data["sentiment"]["news"]
+            if news:
+                for article in news[:5]:
+                    with st.expander(f"📰 {article['title'][:60]}..."):
+                        st.markdown(f"**Publisher:** {article['publisher']}")
+                        st.markdown(f"**Time:** {article['timestamp']}")
+                        st.markdown(f"[Read More]({article['link']})")
+            else:
+                st.info("No recent news")
 
 
 def show_institutional_tab(data):

@@ -113,7 +113,7 @@ A comprehensive, zero-cost investment analysis platform with **5 specialized das
 1. Clone the repository:
 ```bash
 git clone <your-repo-url>
-cd smart-investment-dashboard
+cd Stocksv2
 ```
 
 2. Install dependencies:
@@ -121,18 +121,51 @@ cd smart-investment-dashboard
 pip install -r requirements.txt
 ```
 
-3. (Optional) Set up environment variables:
+3. Download NLTK data (required for sentiment analysis):
 ```bash
-cp .env.example .env
-# Edit .env with your API keys (optional for enhanced features)
+python -c "import nltk; nltk.download('brown'); nltk.download('punkt'); nltk.download('punkt_tab')"
 ```
 
-4. Run the dashboard:
+4. **(Optional but Recommended)** Configure API keys for real-time sentiment data:
+
+   Create a `.streamlit/secrets.toml` file:
+   ```toml
+   # Reddit API (Free - https://www.reddit.com/prefs/apps)
+   REDDIT_CLIENT_ID = "your_client_id_here"
+   REDDIT_CLIENT_SECRET = "your_client_secret_here"
+   REDDIT_USER_AGENT = "StocksV2App/1.0"
+   
+   # NewsAPI (Optional - Free tier: 100 requests/day - https://newsapi.org/)
+   NEWS_API_KEY = "your_newsapi_key_here"
+   ```
+   
+   **How to get free API keys:**
+   
+   **Reddit API** (Highly Recommended):
+   - Visit https://www.reddit.com/prefs/apps
+   - Click "Create App" or "Create Another App"
+   - Select "script" type
+   - Name: "StocksV2App"
+   - Redirect URI: http://localhost:8501
+   - Copy the **client ID** (under app name) and **secret**
+   - **Benefits**: Access to wallstreetbets, r/stocks, r/investing sentiment
+   
+   **NewsAPI** (Optional):
+   - Visit https://newsapi.org/register
+   - Sign up for free account (100 requests/day)
+   - Copy your API key from dashboard
+   - **Benefits**: Real financial news sentiment analysis
+
+5. Run the dashboard:
 ```bash
 streamlit run main.py
+# or use the optimized version:
+streamlit run main_refactored.py
 ```
 
-5. Open browser to `http://localhost:8501`
+6. Open browser to `http://localhost:8501`
+
+**Note**: The app works without API keys but will show simulated sentiment data. Configure Reddit API for real social media sentiment tracking!
 
 ## 📁 Project Structure
 
@@ -177,19 +210,45 @@ StocksV2/
 
 ## 🔧 Configuration
 
+### Sentiment Scraper Setup
+The dashboard includes a **Stock_Scrapper** tool that provides real-time sentiment analysis from Reddit and news sources.
+
+**Features:**
+- Reddit scraping from 7 subreddits (wallstreetbets, stocks, investing, StockMarket, options, Daytrading, SecurityAnalysis)
+- News scraping from NewsAPI
+- Yahoo Finance RSS feed integration
+- TextBlob sentiment analysis (polarity + subjectivity scores)
+- Automatic caching (1-hour TTL to avoid rate limits)
+
+**Two Modes:**
+1. **Basic Scraper** (no API keys required):
+   - Uses Reddit JSON API (no authentication)
+   - Limited to 4 subreddits
+   - Yahoo Finance news only
+   
+2. **Enhanced Scraper** (recommended):
+   - Full Reddit API access via PRAW
+   - 7 subreddits + better data quality
+   - NewsAPI integration for financial news
+   - Requires free API keys (see Installation section)
+
 ### Environment Variables (Optional)
-Create a `.env` file with:
-```
-# Optional - for enhanced sentiment analysis
-GEMINI_API_KEY=your_key_here
-REDDIT_CLIENT_ID=your_reddit_id
-REDDIT_CLIENT_SECRET=your_reddit_secret
+Configure via `.streamlit/secrets.toml`:
+```toml
+# Reddit API (Free - highly recommended)
+REDDIT_CLIENT_ID = "your_client_id"
+REDDIT_CLIENT_SECRET = "your_client_secret"
+REDDIT_USER_AGENT = "StocksV2App/1.0"
+
+# NewsAPI (Optional - free tier available)
+NEWS_API_KEY = "your_api_key"
 ```
 
 ### Default Settings
 - Default ticker: META
-- Cache expiry: 5 minutes for real-time data
-- Supported cryptos: BTC, ETH, XRP
+- Cache expiry: 5 minutes for market data, 1 hour for sentiment
+- Supported cryptos: BTC, ETH, XRP, SOL, DOGE
+- Sentiment sources: Reddit (7 subreddits), NewsAPI, Yahoo Finance
 
 ## 🎯 Complete Feature List
 

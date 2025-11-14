@@ -42,6 +42,14 @@ class Config:
                     "rate_limit": 2000,
                     "timeout": 10,
                     "retries": 3
+                },
+                "reddit": {
+                    "client_id": os.getenv("REDDIT_CLIENT_ID", ""),
+                    "client_secret": os.getenv("REDDIT_CLIENT_SECRET", ""),
+                    "user_agent": os.getenv("REDDIT_USER_AGENT", "StocksV2App/1.0")
+                },
+                "news": {
+                    "api_key": os.getenv("NEWS_API_KEY", "")
                 }
             },
             "features": {
