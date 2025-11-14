@@ -1,6 +1,7 @@
 """
 Data Fetcher Module - Using yfinance for all market data
 Only scrapes for sentiment/news
+Optimized for speed and reliability
 """
 import yfinance as yf
 import pandas as pd
@@ -13,6 +14,7 @@ import json
 import sqlite3
 import logging
 from pathlib import Path
+from utils import sanitize_dict_for_cache
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +70,9 @@ class MarketDataFetcher:
     # ========== PRICE DATA ==========
     def get_stock_data(self, ticker: str, period: str = "1y") -> Dict:
         """Get comprehensive stock data from yfinance"""
-        cache_key = f"stock_{ticker}_{period}"
-        cached = self._get_cached(cache_key)
+        today = datetime.now().strftime('%Y-%m-%d')
+        cache_key = f"stock_{ticker}_{period}_{today}"
+        cached = self._get_cached(cache_key, max_age_minutes=60)
         if cached:
             return cached
         
@@ -84,6 +87,9 @@ class MarketDataFetcher:
                 "dividends": stock.dividends.to_dict() if not stock.dividends.empty else {},
                 "splits": stock.splits.to_dict() if not stock.splits.empty else {},
             }
+            
+            # Sanitize for caching (fix Timestamp issues)
+            data = sanitize_dict_for_cache(data)
             
             self._set_cache(cache_key, data)
             return data
@@ -186,15 +192,23 @@ class MarketDataFetcher:
     # ========== INSTITUTIONAL ==========
     def get_institutional_data(self, ticker: str) -> Dict:
         """Get institutional and insider data"""
+        cache_key = f"institutional_{ticker}"
+        cached = self._get_cached(cache_key, max_age_minutes=1440)  # Cache for 24 hours
+        if cached:
+            return cached
+        
         try:
             stock = yf.Ticker(ticker)
             
-            return {
+            data = {
                 "major_holders": stock.major_holders.to_dict() if hasattr(stock, 'major_holders') and stock.major_holders is not None else {},
                 "institutional_holders": stock.institutional_holders.to_dict() if hasattr(stock, 'institutional_holders') and stock.institutional_holders is not None else {},
                 "insider_transactions": stock.insider_transactions.to_dict() if hasattr(stock, 'insider_transactions') and stock.insider_transactions is not None else {},
                 "insider_purchases": stock.insider_purchases.to_dict() if hasattr(stock, 'insider_purchases') and stock.insider_purchases is not None else {},
             }
+            
+            self._set_cache(cache_key, data)
+            return data
             
         except Exception as e:
             logger.error(f"Error fetching institutional data for {ticker}: {e}")
