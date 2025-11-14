@@ -240,20 +240,20 @@ def show_selector():
         st.markdown("""
         <div class="dashboard-card advanced-card">
             <div class="card-icon">🔬</div>
-            <div class="card-title" style="color: #a78bfa;">ADVANCED</div>
-            <div class="card-subtitle">📊 For Quants & Data Nerds 🤓</div>
+            <div class="card-title" style="color: #a78bfa;">PREDICTIVE & ARBITRAGE</div>
+            <div class="card-subtitle">🤖 AI + Arbitrage Hunting 🎯</div>
             <div class="card-features">
-                ✅ Model backtesting (DCF, P/E)<br>
+                ✅ Claude LLM predictions<br>
+                ✅ Crypto triangular arbitrage<br>
+                ✅ Statistical pairs trading<br>
                 ✅ Prophet forecasting<br>
-                ✅ Short squeeze detector<br>
-                ✅ Sector relative valuation<br>
-                ✅ MAPE accuracy metrics<br>
-                🚨 Math heavy, autism optional
+                ✅ Economic data correlation<br>
+                🚨 One Ring to Rule Them All
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("🔬 **UNLEASH THE QUANT!**", key="advanced", use_container_width=True, type="primary"):
+        if st.button("🔬 **UNLEASH THE AI & ARBITRAGE!**", key="advanced", use_container_width=True, type="primary"):
             st.session_state.selected_dashboard = "advanced"
             st.session_state.dashboard_selected = True
             show_rocket_animation()
@@ -284,16 +284,26 @@ def show_selector():
     
     with col3:
         st.markdown("""
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 40px;">
-            <div style="text-align: center;">
-                <div style="font-size: 3em; margin-bottom: 20px;">🎲</div>
-                <div style="font-size: 1.5em; color: #666; font-style: italic;">
-                    More dashboards<br>coming soon...<br><br>
-                    <span style="font-size: 0.8em;">Or not. We're lazy.</span>
-                </div>
+        <div class="dashboard-card" style="border-color: #ef4444;">
+            <div class="card-icon">🔧</div>
+            <div class="card-title" style="color: #ef4444;">DEBUG</div>
+            <div class="card-subtitle">🛠️ When Shit Breaks 🚨</div>
+            <div class="card-features">
+                ✅ API health monitor<br>
+                ✅ Data validator<br>
+                ✅ Cache manager<br>
+                ✅ Live logs viewer<br>
+                ✅ Session state inspector<br>
+                🚨 For when "it works on my machine"
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        if st.button("🔧 **FIX MY BROKEN SHIT!**", key="debug", use_container_width=True, type="secondary"):
+            st.session_state.selected_dashboard = "debug"
+            st.session_state.dashboard_selected = True
+            show_rocket_animation()
+            st.rerun()
     
     # Fun footer
     st.markdown("""

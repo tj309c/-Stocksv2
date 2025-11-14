@@ -98,6 +98,11 @@ else:
     
     elif selected == "portfolio":
         show_portfolio_dashboard(components)
+    
+    elif selected == "debug":
+        # Import and show debug dashboard
+        from src.dashboards.dashboard_debug import show_debug_dashboard
+        show_debug_dashboard()
     else:
         # Fallback
         st.error("Unknown dashboard selected. Returning to menu...")
