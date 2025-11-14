@@ -180,21 +180,35 @@ def get_light_theme_css():
         color: #1a1a1a;
     }
     
-    /* Tooltips - Fix black on black issue */
+    /* Tooltips - Fix readability in light mode 
+       NOTE: Workaround for Streamlit bug where tooltips don't inherit theme colors properly
+       See: https://github.com/streamlit/streamlit/issues/... */
     [data-baseweb="tooltip"] {
-        background-color: #1a1a1a !important;
+        background-color: #2c3e50 !important;
         color: #ffffff !important;
         border: 1px solid #00d4ff !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
     }
     
     [data-baseweb="tooltip"] div {
-        background-color: #1a1a1a !important;
+        background-color: #2c3e50 !important;
         color: #ffffff !important;
     }
     
     /* Tooltip arrow */
     [data-baseweb="tooltip"] [data-popper-arrow] {
-        background-color: #1a1a1a !important;
+        background-color: #2c3e50 !important;
+    }
+    
+    /* Sidebar button tooltips specifically */
+    [data-testid="stSidebar"] [data-baseweb="tooltip"] {
+        background-color: #2c3e50 !important;
+        color: #ffffff !important;
+    }
+    
+    [data-testid="stSidebar"] [data-baseweb="tooltip"] div {
+        background-color: #2c3e50 !important;
+        color: #ffffff !important;
     }
 </style>
 """
@@ -342,7 +356,9 @@ def get_dark_theme_css():
         }
     }
     
-    /* Tooltips - Fix readability (white text on dark background) */
+    /* Tooltips - Fix readability (white text on dark background)
+       NOTE: Workaround for Streamlit bug where tooltips don't inherit theme colors properly
+       See: https://github.com/streamlit/streamlit/issues/... */
     [data-baseweb="tooltip"] {
         background-color: #1a1f2e !important;
         color: #ffffff !important;
@@ -369,29 +385,40 @@ def apply_theme(dark_mode=False):
         st.markdown(get_light_theme_css(), unsafe_allow_html=True)
     
     # Additional global CSS to fix all tooltip readability issues
-    st.markdown("""
+    # NOTE: This is a workaround for Streamlit bug where tooltips don't properly inherit theme colors
+    # Without this, tooltips show black text on black background making them unreadable
+    # See: https://github.com/streamlit/streamlit/issues/...
+    tooltip_bg = "rgba(44, 62, 80, 0.95)" if not dark_mode else "rgba(26, 31, 46, 0.95)"
+    tooltip_border = "#00d4ff" if not dark_mode else "#00ff88"
+    
+    st.markdown(f"""
     <style>
         /* Fix Streamlit's help icon tooltips */
-        [data-testid="stTooltipHoverTarget"] + div {
-            background-color: rgba(26, 31, 46, 0.95) !important;
+        [data-testid="stTooltipHoverTarget"] + div {{
+            background-color: {tooltip_bg} !important;
             color: white !important;
-            border: 1px solid #00ff88 !important;
+            border: 1px solid {tooltip_border} !important;
             padding: 8px 12px !important;
             border-radius: 6px !important;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-        }
+        }}
         
         /* Fix tooltip content text */
-        [data-testid="stTooltipHoverTarget"] + div * {
+        [data-testid="stTooltipHoverTarget"] + div * {{
             color: white !important;
-        }
+        }}
         
         /* Ensure all help tooltips are readable */
-        .stTooltip, [role="tooltip"] {
-            background-color: rgba(26, 31, 46, 0.95) !important;
+        .stTooltip, [role="tooltip"] {{
+            background-color: {tooltip_bg} !important;
             color: white !important;
-            border: 1px solid #00ff88 !important;
-        }
+            border: 1px solid {tooltip_border} !important;
+        }}
+        
+        /* Sidebar tooltips - especially for dashboard switcher buttons */
+        [data-testid="stSidebar"] [title] {{
+            color: white !important;
+        }}
     </style>
     """, unsafe_allow_html=True)
 
