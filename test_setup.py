@@ -4,6 +4,7 @@ Test script to verify the dashboard setup
 import sys
 import importlib
 from pathlib import Path
+from git_utils import GitChangeDetector
 
 def test_dependencies():
     """Test if all required packages are installed"""
@@ -92,6 +93,47 @@ def test_cache_directory():
         print(f"❌ Error creating cache directory: {e}")
         return False
 
+def test_git_status():
+    """Check for uncommitted changes in git repository"""
+    print("\n🔍 Checking git repository status...")
+    
+    try:
+        detector = GitChangeDetector(".")
+        
+        if not detector.is_git_repo():
+            print("ℹ️  Not a git repository - skipping version control check")
+            return True
+        
+        if not detector.has_uncommitted_changes():
+            print("✅ No uncommitted changes detected")
+            return True
+        
+        # Get detailed summary
+        summary = detector.get_change_summary()
+        print(f"⚠️  Uncommitted changes detected: {summary}")
+        
+        changes = detector.get_uncommitted_changes()
+        
+        # Show details
+        if changes.get("modified"):
+            print(f"   Modified: {', '.join(changes['modified'][:3])}" + 
+                  (f" and {len(changes['modified'])-3} more" if len(changes['modified']) > 3 else ""))
+        if changes.get("untracked"):
+            print(f"   Untracked: {', '.join(changes['untracked'][:3])}" +
+                  (f" and {len(changes['untracked'])-3} more" if len(changes['untracked']) > 3 else ""))
+        
+        print("\n   💡 Tip: You can still run the dashboard, but consider:")
+        print("      - Committing your changes: git add . && git commit -m 'message'")
+        print("      - Or stashing them: git stash")
+        print("      - Or running with uncommitted changes (not recommended for production)")
+        
+        # This is a warning, not a failure
+        return True
+        
+    except Exception as e:
+        print(f"⚠️  Could not check git status: {e}")
+        return True  # Don't fail the setup for git check issues
+
 def main():
     """Run all tests"""
     print("=" * 50)
@@ -102,7 +144,8 @@ def main():
         ("Dependencies", test_dependencies),
         ("Data Fetching", test_data_fetching),
         ("Custom Modules", test_modules),
-        ("Cache Directory", test_cache_directory)
+        ("Cache Directory", test_cache_directory),
+        ("Git Status", test_git_status)
     ]
     
     results = []

@@ -53,12 +53,17 @@ cp .env.example .env
 # Edit .env with your API keys (optional for enhanced features)
 ```
 
-4. Run the dashboard:
+4. (Optional) Verify setup:
+```bash
+python test_setup.py
+```
+
+5. Run the dashboard:
 ```bash
 streamlit run main.py
 ```
 
-5. Open browser to `http://localhost:8501`
+6. Open browser to `http://localhost:8501`
 
 ## 📁 Project Structure
 
@@ -67,6 +72,10 @@ smart-investment-dashboard/
 ├── main.py              # Main Streamlit dashboard
 ├── data_fetcher.py      # Data fetching using yfinance
 ├── analysis_engine.py   # Valuation, technical analysis, buy signals
+├── git_utils.py         # Git change detection utilities
+├── check_git_status.py  # Command-line git status checker
+├── test_setup.py        # Setup verification script
+├── config.py            # Configuration settings
 ├── requirements.txt     # Python dependencies
 ├── .env.example        # Environment variables template
 ├── README.md           # This file
@@ -89,6 +98,22 @@ REDDIT_CLIENT_SECRET=your_reddit_secret
 - Default ticker: META
 - Cache expiry: 5 minutes for real-time data
 - Supported cryptos: BTC, ETH, XRP
+
+### Git Change Detection
+The dashboard includes utilities to detect uncommitted git changes:
+
+```bash
+# Check for uncommitted changes (interactive)
+python check_git_status.py
+
+# Auto-proceed mode (warns but doesn't block)
+python check_git_status.py --auto-proceed
+
+# Strict mode (exits with error if changes found)
+python check_git_status.py --strict
+```
+
+This helps ensure you're working with a clean repository before deployments or updates.
 
 ## 📊 Data Sources
 
@@ -184,6 +209,12 @@ streamlit run main.py --server.port 8501
 3. **Missing indicators**
    - Some require minimum data points (e.g., 200 days for SMA200)
    - Not all tickers have options data
+
+4. **Uncommitted changes warning**
+   - The setup test checks for uncommitted git changes
+   - This is a warning only - you can still run the dashboard
+   - Use `git add .` and `git commit` to commit changes
+   - Or use `git stash` to temporarily store them
 
 ## 📝 Future Enhancements
 
