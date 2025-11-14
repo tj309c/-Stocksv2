@@ -34,14 +34,18 @@ class ValuationEngine:
             
             # Get cash flows (simplified - using net income as proxy)
             cash_flows = []
-            if "cash_flow" in financials and financials["cash_flow"]:
-                cf_data = pd.DataFrame(financials["cash_flow"])
-                if "Free Cash Flow" in cf_data.index:
-                    cash_flows = cf_data.loc["Free Cash Flow"].values[:4]
-                elif "Operating Cash Flow" in cf_data.index:
-                    cash_flows = cf_data.loc["Operating Cash Flow"].values[:4]
+            if "cash_flow" in financials and financials.get("cash_flow"):
+                try:
+                    cf_data = pd.DataFrame(financials["cash_flow"])
+                    if not cf_data.empty:
+                        if "Free Cash Flow" in cf_data.index:
+                            cash_flows = cf_data.loc["Free Cash Flow"].values[:4]
+                        elif "Operating Cash Flow" in cf_data.index:
+                            cash_flows = cf_data.loc["Operating Cash Flow"].values[:4]
+                except Exception as e:
+                    logger.error(f"Error parsing cash flow data: {e}")
             
-            if len(cash_flows) == 0:
+            if len(cash_flows) == 0 or not any(cash_flows):
                 return {"error": "No cash flow data available"}
             
             # Project future cash flows

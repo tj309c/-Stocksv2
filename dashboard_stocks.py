@@ -339,12 +339,20 @@ def show_valuation_tab(data, components):
     """Show valuation analysis (Due Diligence)"""
     st.subheader("💰 Valuation DD (Due Diligence)")
     
-    info = data["stock_data"].get("info", {}) if data.get("stock_data") else {}
-    
-    # Calculate valuation
-    valuation = components["valuation"].calculate_dcf(data["fundamentals"], info)
-    if "error" in valuation:
-        valuation = components["valuation"].calculate_multiples_valuation(info)
+    try:
+        info = data["stock_data"].get("info", {}) if data.get("stock_data") else {}
+        
+        if not info:
+            st.warning("⚠️ No stock info available for valuation analysis")
+            return
+        
+        # Calculate valuation
+        valuation = components["valuation"].calculate_dcf(data.get("fundamentals", {}), info)
+        if "error" in valuation:
+            valuation = components["valuation"].calculate_multiples_valuation(info)
+    except Exception as e:
+        st.error(f"❌ Error loading valuation data: {str(e)}")
+        return
     
     col1, col2 = st.columns(2)
     
@@ -371,33 +379,37 @@ def show_valuation_tab(data, components):
             # Scenarios
             if "scenarios" in valuation:
                 st.markdown("### 📊 Price Scenarios")
-                scenarios_df = pd.DataFrame({
-                    'Scenario': ['🐻 Bear', '📊 Base', '🚀 Bull'],
-                    'Price': [
-                        valuation['scenarios']['bear'],
-                        valuation['scenarios']['base'],
-                        valuation['scenarios']['bull']
-                    ]
-                })
-                
-                fig = go.Figure(data=[
-                    go.Bar(
-                        x=scenarios_df['Scenario'],
-                        y=scenarios_df['Price'],
-                        marker_color=['#FF3860', '#FFB700', '#00FF88']
+                try:
+                    scenarios_df = pd.DataFrame({
+                        'Scenario': ['🐻 Bear', '📊 Base', '🚀 Bull'],
+                        'Price': [
+                            valuation['scenarios']['bear'],
+                            valuation['scenarios']['base'],
+                            valuation['scenarios']['bull']
+                        ]
+                    })
+                    
+                    fig = go.Figure(data=[
+                        go.Bar(
+                            x=scenarios_df['Scenario'],
+                            y=scenarios_df['Price'],
+                            marker_color=['#FF3860', '#FFB700', '#00FF88']
+                        )
+                    ])
+                    
+                    if current_price and current_price > 0:
+                        fig.add_hline(y=current_price, line_dash="dash", line_color="white",
+                                    annotation_text="Current Price")
+                    
+                    fig.update_layout(
+                        yaxis_title="Price ($)",
+                        template="plotly_dark",
+                        height=400
                     )
-                ])
-                
-                fig.add_hline(y=current_price, line_dash="dash", line_color="white",
-                            annotation_text="Current Price")
-                
-                fig.update_layout(
-                    yaxis_title="Price ($)",
-                    template="plotly_dark",
-                    height=400
-                )
-                
-                st.plotly_chart(fig, width='stretch')
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Error creating scenarios chart: {str(e)}")
         else:
             st.warning(f"⚠️ Valuation unavailable: {valuation.get('error', 'Unknown error')}")
     
