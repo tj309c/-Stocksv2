@@ -6,12 +6,9 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 import yfinance as yf
-from pathlib import Path
-import time
 
 # Import custom modules
 from data_fetcher import MarketDataFetcher, SentimentScraper

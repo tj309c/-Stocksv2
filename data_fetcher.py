@@ -252,17 +252,7 @@ class SentimentScraper:
             logger.error(f"Error fetching StockTwits sentiment: {e}")
             return {"error": str(e)}
     
-    def get_reddit_mentions(self, ticker: str) -> Dict:
-        """Get Reddit mentions (requires PRAW setup)"""
-        # Simplified version without API key
-        # Would need Reddit API credentials for full implementation
-        return {
-            "mentions": 0,
-            "sentiment": "neutral",
-            "top_posts": [],
-            "last_updated": datetime.now().isoformat()
-        }
-    
+
     def get_news_sentiment(self, ticker: str) -> List[Dict]:
         """Get news from yfinance"""
         try:
