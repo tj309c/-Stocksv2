@@ -14,6 +14,12 @@ import yfinance as yf
 from data_fetcher import MarketDataFetcher, SentimentScraper
 from analysis_engine import ValuationEngine, TechnicalAnalyzer, GoodBuyAnalyzer, OptionsAnalyzer
 
+# ========== COLOR CONSTANTS ==========
+COLOR_PRIMARY = "#00d4ff"      # Cyan
+COLOR_SUCCESS = "#00FF88"      # Green
+COLOR_DANGER = "#FF3860"       # Red
+COLOR_WARNING = "#FFB700"      # Orange
+
 # ========== PAGE CONFIGURATION ==========
 st.set_page_config(
     page_title="🎯 Smart Investment Dashboard",
@@ -23,51 +29,51 @@ st.set_page_config(
 )
 
 # Custom CSS for premium look
-st.markdown("""
+st.markdown(f"""
 <style>
     /* Main app background */
-    .stApp {
+    .stApp {{
         background: linear-gradient(180deg, #0e1117 0%, #1a1f2e 100%);
-    }
+    }}
     
     /* Metrics styling */
-    [data-testid="metric-container"] {
+    [data-testid="metric-container"] {{
         background: rgba(28, 31, 38, 0.8);
-        border: 1px solid #00d4ff;
+        border: 1px solid {COLOR_PRIMARY};
         padding: 15px;
         border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0, 212, 255, 0.1);
-    }
+    }}
     
     /* Headers */
-    h1, h2, h3 {
-        color: #00d4ff !important;
+    h1, h2, h3 {{
+        color: {COLOR_PRIMARY} !important;
         font-weight: 600 !important;
-    }
+    }}
     
     /* Info boxes */
-    .stAlert {
+    .stAlert {{
         background: rgba(0, 212, 255, 0.1);
-        border-left: 4px solid #00d4ff;
-    }
+        border-left: 4px solid {COLOR_PRIMARY};
+    }}
     
     /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
+    .stTabs [data-baseweb="tab-list"] {{
         gap: 8px;
         background: rgba(28, 31, 38, 0.5);
         padding: 5px;
         border-radius: 10px;
-    }
+    }}
     
-    .stTabs [data-baseweb="tab"] {
+    .stTabs [data-baseweb="tab"] {{
         background: rgba(28, 31, 38, 0.8);
         color: #fff;
         border-radius: 5px;
-    }
+    }}
     
-    .stTabs [aria-selected="true"] {
-        background: #00d4ff;
-    }
+    .stTabs [aria-selected="true"] {{
+        background: {COLOR_PRIMARY};
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -284,7 +290,7 @@ with col1:
     )
 
 with col2:
-    color = "#00FF88" if confidence >= 70 else "#FFB700" if confidence >= 50 else "#FF3860"
+    color = COLOR_SUCCESS if confidence >= 70 else COLOR_WARNING if confidence >= 50 else COLOR_DANGER
     st.markdown(f"""
     <div style="background: {color}20; border: 2px solid {color}; padding: 10px; border-radius: 10px; text-align: center;">
         <h3 style="color: {color}; margin: 0;">🎯 GOOD BUY RANGE</h3>
@@ -312,7 +318,7 @@ if buy_analysis["signals"]:
 
 # Recommendation Badge
 rec = buy_analysis["recommendation"]
-rec_color = "#00FF88" if rec == "STRONG BUY" else "#FFB700" if rec == "BUY" else "#FF3860"
+rec_color = COLOR_SUCCESS if rec == "STRONG BUY" else COLOR_WARNING if rec == "BUY" else COLOR_DANGER
 st.markdown(f"""
 <div style="background: {rec_color}20; border: 2px solid {rec_color}; padding: 15px; border-radius: 10px; text-align: center; margin: 20px 0;">
     <h1 style="color: {rec_color}; margin: 0;">{rec}</h1>
@@ -365,7 +371,7 @@ with tab1:
             if len(df) >= 20:
                 sma20 = df['Close'].rolling(20).mean()
                 fig.add_trace(
-                    go.Scatter(x=df.index, y=sma20, name="SMA20", line=dict(color="#00d4ff", width=1)),
+                    go.Scatter(x=df.index, y=sma20, name="SMA20", line=dict(color=COLOR_PRIMARY, width=1)),
                     row=1, col=1
                 )
             
@@ -432,7 +438,7 @@ with tab1:
                 x=scores_df['Score'],
                 y=scores_df['Factor'],
                 orientation='h',
-                marker_color=['#00FF88' if s >= 70 else '#FFB700' if s >= 50 else '#FF3860' 
+                marker_color=[COLOR_SUCCESS if s >= 70 else COLOR_WARNING if s >= 50 else COLOR_DANGER
                              for s in scores_df['Score']]
             )
         ])
@@ -482,7 +488,7 @@ with tab2:
                     go.Bar(
                         x=scenarios_df['Scenario'],
                         y=scenarios_df['Price'],
-                        marker_color=['#FF3860', '#FFB700', '#00FF88']
+                        marker_color=[COLOR_DANGER, COLOR_WARNING, COLOR_SUCCESS]
                     )
                 ])
                 
@@ -525,7 +531,7 @@ with tab2:
                 go.Bar(
                     x=multiples_df['Multiple'],
                     y=multiples_df['Value'],
-                    marker_color='#00d4ff'
+                    marker_color=COLOR_PRIMARY
                 )
             ])
             
@@ -562,11 +568,11 @@ with tab3:
                 domain={'x': [0, 1], 'y': [0, 1]},
                 gauge={
                     'axis': {'range': [0, 100]},
-                    'bar': {'color': "#00d4ff"},
+                    'bar': {'color': COLOR_PRIMARY},
                     'steps': [
-                        {'range': [0, 30], 'color': "#00FF88"},
-                        {'range': [30, 70], 'color': "#FFB700"},
-                        {'range': [70, 100], 'color': "#FF3860"}
+                        {'range': [0, 30], 'color': COLOR_SUCCESS},
+                        {'range': [30, 70], 'color': COLOR_WARNING},
+                        {'range': [70, 100], 'color': COLOR_DANGER}
                     ],
                     'threshold': {
                         'line': {'color': "white", 'width': 4},
@@ -619,7 +625,7 @@ with tab3:
         patterns = components["technical"].detect_patterns(df)
         if patterns:
             for pattern in patterns:
-                signal_color = "#00FF88" if pattern['signal'] == "bullish" else "#FF3860"
+                signal_color = COLOR_SUCCESS if pattern['signal'] == "bullish" else COLOR_DANGER
                 st.markdown(f"<span style='color: {signal_color}'>● {pattern['pattern'].replace('_', ' ').title()} - {pattern['signal'].upper()}</span>", unsafe_allow_html=True)
         else:
             st.info("No significant patterns detected")
@@ -648,7 +654,7 @@ with tab4:
                 labels=list(sentiment_data.keys()),
                 values=list(sentiment_data.values()),
                 hole=.3,
-                marker_colors=["#00FF88", "#FF3860", "#FFB700"]
+                marker_colors=[COLOR_SUCCESS, COLOR_DANGER, COLOR_WARNING]
             )])
             
             fig.update_layout(
@@ -687,13 +693,13 @@ with tab4:
         
         fig.add_trace(
             go.Scatter(x=trend_data['Date'], y=trend_data['Mentions'], 
-                      name="Mentions", line=dict(color="#00d4ff")),
+                      name="Mentions", line=dict(color=COLOR_PRIMARY)),
             row=1, col=1
         )
         
         fig.add_trace(
             go.Scatter(x=trend_data['Date'], y=trend_data['Sentiment'],
-                      name="Sentiment", line=dict(color="#FFB700")),
+                      name="Sentiment", line=dict(color=COLOR_WARNING)),
             row=2, col=1
         )
         
@@ -855,7 +861,7 @@ with tab8:
                 y=df['Close'],
                 mode='lines',
                 name='Close',
-                line=dict(color='#00d4ff', width=2)
+                line=dict(color=COLOR_PRIMARY, width=2)
             )])
         elif chart_type == "Area":
             fig = go.Figure(data=[go.Scatter(
@@ -864,7 +870,7 @@ with tab8:
                 fill='tozeroy',
                 mode='lines',
                 name='Close',
-                line=dict(color='#00d4ff', width=2)
+                line=dict(color=COLOR_PRIMARY, width=2)
             )])
         else:
             # Heikin Ashi
@@ -888,7 +894,7 @@ with tab8:
                 x=df.index,
                 y=df['Close'].rolling(20).mean(),
                 name='SMA20',
-                line=dict(color='#FFB700', width=1)
+                line=dict(color=COLOR_WARNING, width=1)
             ))
         
         if "SMA50" in indicators and len(df) >= 50:
@@ -896,7 +902,7 @@ with tab8:
                 x=df.index,
                 y=df['Close'].rolling(50).mean(),
                 name='SMA50',
-                line=dict(color='#FF3860', width=1)
+                line=dict(color=COLOR_DANGER, width=1)
             ))
         
         if "Bollinger Bands" in indicators and len(df) >= 20:
