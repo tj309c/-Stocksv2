@@ -78,9 +78,10 @@ def show_stocks_dashboard(components, ticker="META"):
     show_buy_signal_section(data, components, diamond_hands)
     
     # Tabs for detailed analysis
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📊 Overview",
         "💰 Valuation (DD)",
+        "🎛️ Interactive DCF",
         "📈 Technical (Charts)",
         "💬 Ape Sentiment",
         "🏢 Smart Money"
@@ -93,12 +94,17 @@ def show_stocks_dashboard(components, ticker="META"):
         show_valuation_tab(data, components)
     
     with tab3:
-        show_technical_tab(data, components)
+        # Enhanced valuation with interactive DCF and Monte Carlo
+        from enhanced_valuation_ui import show_enhanced_valuation_tab
+        show_enhanced_valuation_tab(data, components)
     
     with tab4:
-        show_sentiment_tab(data, components)
+        show_technical_tab(data, components)
     
     with tab5:
+        show_sentiment_tab(data, components)
+    
+    with tab6:
         show_institutional_tab(data)
 
 
