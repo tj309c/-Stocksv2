@@ -39,14 +39,14 @@ def show_advanced_dashboard(components, ticker="SPY"):
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🔬 Analyze", type="primary", key="analyze_advanced"):
             ticker = ticker_input
-            st.session_state.advanced_ticker = ticker
+            st.session_state.active_ticker = ticker
     
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🔄 Refresh", key="refresh_advanced"):
             st.rerun()
     
-    ticker = st.session_state.get("advanced_ticker", ticker_input)
+    ticker = st.session_state.get("active_ticker", ticker_input)
     
     # Fetch data
     with st.spinner(f"Running advanced analytics for {ticker}... 🔬"):

@@ -50,7 +50,7 @@ def show_stocks_dashboard(components, ticker="META"):
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🔍 Analyze", type="primary", key="analyze_stock"):
             ticker = ticker_input
-            st.session_state.current_ticker = ticker
+            st.session_state.active_ticker = ticker
     
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -62,7 +62,7 @@ def show_stocks_dashboard(components, ticker="META"):
         diamond_hands = st.checkbox("💎🙌", value=True, help="Diamond Hands Mode")
     
     # Fetch data
-    ticker = st.session_state.get("current_ticker", ticker_input)
+    ticker = st.session_state.get("active_ticker", ticker_input)
     
     loading_msg = get_loading_message()
     with st.spinner(f"{loading_msg} ({ticker})"):

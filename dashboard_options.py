@@ -36,14 +36,14 @@ def show_options_dashboard(components, ticker="SPY"):
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("⚡ Analyze", type="primary", key="analyze_options"):
             ticker = ticker_input
-            st.session_state.current_options_ticker = ticker
+            st.session_state.active_ticker = ticker
     
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🔄 Refresh", key="refresh_options"):
             st.rerun()
     
-    ticker = st.session_state.get("current_options_ticker", ticker_input)
+    ticker = st.session_state.get("active_ticker", ticker_input)
     
     # Fetch data
     with st.spinner(f"Loading options chain for {ticker}... ⚡"):

@@ -47,7 +47,7 @@ def show_crypto_dashboard(components, ticker="BTC-USD"):
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🚀 Analyze", type="primary", key="analyze_crypto"):
-            st.session_state.current_crypto = ticker
+            st.session_state.active_ticker = ticker
     
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -58,7 +58,7 @@ def show_crypto_dashboard(components, ticker="BTC-USD"):
         st.markdown("<br>", unsafe_allow_html=True)
         hodl_mode = st.checkbox("💎 HODL", value=True, help="Diamond Hands Mode")
     
-    ticker = st.session_state.get("current_crypto", ticker)
+    ticker = st.session_state.get("active_ticker", ticker)
     
     # Fetch data
     with st.spinner(f"Loading {ticker.replace('-USD', '')} data... 🚀"):
