@@ -38,7 +38,24 @@ The primary objective is to **identify market inefficiencies** and **generate fo
 - Sector and industry peer comparisons
 
 **Quantitative Valuation Models:**
-- **Discounted Cash Flow (DCF)**: Monte Carlo simulation for sensitivity analysis
+- **Interactive DCF Calculator**: 🆕 Real-time valuation with adjustable parameters
+  - 7 interactive sliders: Growth Rate, WACC, Terminal Growth, Projection Years
+  - Live enterprise value and fair value calculations
+  - Detailed breakdown of all intermediate steps
+  - Visual cash flow projections
+- **Monte Carlo Simulation**: 🆕 Statistical valuation with probability distributions
+  - 100-10,000 simulation runs with configurable parameters
+  - Confidence intervals (50%, 80%, 90%)
+  - Probability distribution charts
+  - Percentile analysis (5th through 95th percentiles)
+- **Sensitivity Analysis**: 🆕 Impact analysis for key variables
+  - One-way sensitivity for any parameter
+  - Two-way sensitivity matrix (Growth vs WACC)
+  - Interactive charts and heatmaps
+- **Scenario Comparison**: 🆕 Bear/Base/Bull case analysis
+  - Side-by-side scenario comparison
+  - Customizable assumptions for each scenario
+  - Visual comparison charts
 - **Dividend Discount Model (DDM)**: Gordon Growth Model for income-generating equities
 - **Net Asset Value (NAV)**: For asset-heavy companies (REITs, BDCs, holding companies)
 - **Relative Valuation**: Multiples comparison against sector and industry peers

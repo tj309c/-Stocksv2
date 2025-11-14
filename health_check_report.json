@@ -1,0 +1,331 @@
+{
+  "timestamp": "2025-11-14T07:55:06.859398",
+  "syntax_checks": [],
+  "import_checks": [
+    {
+      "test": "streamlit (Web framework)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "pandas (Data analysis)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "numpy (Numerical computing)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "plotly (Visualization)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "yfinance (Market data)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "ta (Technical analysis)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "scipy (Scientific computing)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "ccxt (Crypto exchange data) [OPTIONAL]",
+      "status": "WARN",
+      "details": "No module named 'ccxt'"
+    },
+    {
+      "test": "fredapi (Federal Reserve data) [OPTIONAL]",
+      "status": "WARN",
+      "details": "No module named 'fredapi'"
+    },
+    {
+      "test": "anthropic (Claude LLM) [OPTIONAL]",
+      "status": "WARN",
+      "details": "No module named 'anthropic'"
+    },
+    {
+      "test": "finnhub (Insider trades) [OPTIONAL]",
+      "status": "WARN",
+      "details": "No module named 'finnhub'"
+    },
+    {
+      "test": "praw (Reddit API) [OPTIONAL]",
+      "status": "WARN",
+      "details": "No module named 'praw'"
+    },
+    {
+      "test": "newsapi (News API) [OPTIONAL]",
+      "status": "WARN",
+      "details": "No module named 'newsapi'"
+    },
+    {
+      "test": "statsmodels (Statistical models) [OPTIONAL]",
+      "status": "WARN",
+      "details": "No module named 'statsmodels'"
+    }
+  ],
+  "module_tests": [
+    {
+      "test": "utils",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "data_fetcher",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "analysis_engine",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "theme_manager",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "wsb_quotes",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "debug_tools",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "enhanced_valuation",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "enhanced_valuation_ui",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "dashboard_selector",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "dashboard_stocks",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "dashboard_options",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "dashboard_crypto",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "dashboard_advanced",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "dashboard_portfolio",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "utils.format_currency",
+      "status": "WARN",
+      "details": "Got '$1.23K', expected '$1,234.56'"
+    },
+    {
+      "test": "utils.format_percentage",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "utils.format_large_number",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "utils.format_price",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "utils.safe_divide (normal)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "utils.safe_divide (divide by zero)",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: main.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: requirements.txt",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: README.md",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: dashboard_stocks.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: dashboard_options.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: dashboard_crypto.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: dashboard_advanced.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: dashboard_portfolio.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: data_fetcher.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: analysis_engine.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: utils.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: enhanced_valuation.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "File exists: enhanced_valuation_ui.py",
+      "status": "PASS",
+      "details": ""
+    }
+  ],
+  "calculation_tests": [
+    {
+      "test": "ValuationEngine instantiation",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "DCF calculation (no cash flow)",
+      "status": "WARN",
+      "details": "Expected error with no cash flow data"
+    },
+    {
+      "test": "Multiples valuation",
+      "status": "WARN",
+      "details": "Insufficient data for multiples valuation"
+    },
+    {
+      "test": "EnhancedDCFCalculator instantiation",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "Enhanced DCF calculation",
+      "status": "PASS",
+      "details": "Fair value: $181.67"
+    },
+    {
+      "test": "DCF value range check",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "Monte Carlo simulation",
+      "status": "PASS",
+      "details": "100 simulations, mean: $197.34"
+    },
+    {
+      "test": "Sensitivity analysis",
+      "status": "PASS",
+      "details": "4 data points"
+    }
+  ],
+  "data_fetcher_tests": [
+    {
+      "test": "MarketDataFetcher instantiation",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "Method: get_stock_data",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "Method: get_realtime_quote",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "Method: get_fundamentals",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "test": "Method: get_institutional_data",
+      "status": "PASS",
+      "details": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "Optional: ccxt not available - No module named 'ccxt'",
+    "Optional: fredapi not available - No module named 'fredapi'",
+    "Optional: anthropic not available - No module named 'anthropic'",
+    "Optional: finnhub not available - No module named 'finnhub'",
+    "Optional: praw not available - No module named 'praw'",
+    "Optional: newsapi not available - No module named 'newsapi'",
+    "Optional: statsmodels not available - No module named 'statsmodels'"
+  ],
+  "summary": {
+    "total_tests": 60,
+    "passed": 50,
+    "failed": 0,
+    "warnings": 10,
+    "pass_rate": "83.3%",
+    "critical_errors": 0,
+    "total_warnings": 7
+  }
+}
